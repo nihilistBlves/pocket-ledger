@@ -26,9 +26,15 @@ imports/
 !**/fixtures/**/*.csv
 !**/fixtures/**/*.xlsx
 
-# --- Logs ---
+# --- Logs / temp ---
 *.log
 logs/
+tmp/
+
+# --- Python / misc tooling ---
+.venv/
+.next/
+.taste-skill/
 
 # --- Node / Angular ---
 node_modules/
