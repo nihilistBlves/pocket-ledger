@@ -1,4 +1,4 @@
-//! File readers: turn CSV or Excel bytes into a plain table of [`RawRow`]s.
+//! File readers: turn CSV, Excel or HTML-table bytes into a plain table of [`RawRow`]s.
 //!
 //! Readers know nothing about columns or profiles' meaning; they only decode the
 //! file. Money is never converted here: Excel numbers are kept as text (see
@@ -196,6 +196,173 @@ pub fn read_excel(bytes: &[u8], sheet: Option<&str>) -> Result<Vec<RawRow>, Impo
         cells.extend(row.iter().map(convert_excel_cell));
         rows.push(RawRow {
             number: start_row + i + 1,
+            cells,
+        });
+    }
+    Ok(rows)
+}
+
+/// How many leading bytes are inspected for sniffing and for a charset declaration.
+const SNIFF_LIMIT: usize = 4096;
+/// Guards against absurd `colspan` values creating huge rows.
+const MAX_COLSPAN: usize = 256;
+const UTF8_BOM: &[u8] = b"\xEF\xBB\xBF";
+
+fn find_ci(haystack: &[u8], needle: &[u8]) -> bool {
+    haystack
+        .windows(needle.len())
+        .any(|w| w.eq_ignore_ascii_case(needle))
+}
+
+/// True when the bytes are an HTML/XHTML document rather than a real workbook.
+///
+/// Some banks (Openbank) export an XHTML table named `.xls`. Detection is by
+/// content: after an optional UTF-8 BOM and whitespace, the file must start with
+/// `<!doctype html`, `<html` or `<table`, or with `<?xml` followed by an `<html`
+/// element.
+pub fn looks_like_html(bytes: &[u8]) -> bool {
+    let bytes = bytes.strip_prefix(UTF8_BOM).unwrap_or(bytes);
+    let start = bytes
+        .iter()
+        .position(|b| !b.is_ascii_whitespace())
+        .unwrap_or(bytes.len());
+    let rest = &bytes[start..];
+    let starts = |p: &[u8]| rest.len() >= p.len() && rest[..p.len()].eq_ignore_ascii_case(p);
+    if starts(b"<!doctype html") || starts(b"<html") || starts(b"<table") {
+        return true;
+    }
+    starts(b"<?xml") && find_ci(&rest[..rest.len().min(SNIFF_LIMIT)], b"<html")
+}
+
+/// Finds `charset=<label>` in the head of the document (meta charset or
+/// http-equiv content-type). Only ASCII is looked at.
+fn declared_charset(bytes: &[u8]) -> Option<&'static encoding_rs::Encoding> {
+    let head = &bytes[..bytes.len().min(SNIFF_LIMIT)];
+    let lower: Vec<u8> = head.iter().map(u8::to_ascii_lowercase).collect();
+    let key = b"charset";
+    let mut from = 0;
+    while let Some(pos) = lower[from..]
+        .windows(key.len())
+        .position(|w| w == key)
+        .map(|p| p + from)
+    {
+        let mut i = pos + key.len();
+        while i < lower.len() && lower[i] == b' ' {
+            i += 1;
+        }
+        if i < lower.len() && lower[i] == b'=' {
+            i += 1;
+            while i < lower.len() && matches!(lower[i], b' ' | b'"' | b'\'') {
+                i += 1;
+            }
+            let end = lower[i..]
+                .iter()
+                .position(|b| {
+                    !(b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':' | b'.'))
+                })
+                .map_or(lower.len(), |e| e + i);
+            if let Some(enc) = encoding_rs::Encoding::for_label(&lower[i..end]) {
+                return Some(enc);
+            }
+        }
+        from = pos + key.len();
+    }
+    None
+}
+
+fn collect_text(node: scraper::ElementRef<'_>, out: &mut String) {
+    use scraper::Node;
+    for child in node.children() {
+        match child.value() {
+            Node::Text(t) => out.push_str(t),
+            Node::Element(el) => {
+                let name = el.name();
+                if name == "script" || name == "style" {
+                    continue;
+                }
+                if name == "br" {
+                    out.push(' ');
+                }
+                if let Some(e) = scraper::ElementRef::wrap(child) {
+                    collect_text(e, out);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Text content with all whitespace (including U+00A0) collapsed and trimmed.
+fn cell_text(cell: scraper::ElementRef<'_>) -> String {
+    let mut raw = String::new();
+    collect_text(cell, &mut raw);
+    raw.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Reads every `<tr>` of every table, in document order, as one flat list of rows.
+///
+/// `RawRow::number` is the 1-based index in that flattened list (the HTML has no
+/// native row numbers); empty rows are kept so the numbers stay stable. Cells are
+/// `<td>`/`<th>`; a `colspan=n` cell yields n cells (text in the first, the rest
+/// empty). The charset comes from a BOM, then `<meta>`, then UTF-8, falling back
+/// to windows-1252 when an undeclared file is not valid UTF-8.
+/// Scripts are never run and nothing external is loaded.
+pub fn read_html_table(bytes: &[u8]) -> Result<Vec<RawRow>, ImportError> {
+    let has_bom = bytes.starts_with(UTF8_BOM)
+        || bytes.starts_with(b"\xFF\xFE")
+        || bytes.starts_with(b"\xFE\xFF");
+    let declared = if has_bom {
+        None
+    } else {
+        declared_charset(bytes)
+    };
+    // `decode` lets a BOM override the chosen encoding.
+    let (mut text, _, mut had_errors) = declared.unwrap_or(encoding_rs::UTF_8).decode(bytes);
+    if had_errors && !has_bom && declared.is_none() {
+        // Undeclared and not valid UTF-8: Spanish bank exports are almost always
+        // windows-1252 in that case (which never fails to decode).
+        (text, _, had_errors) = encoding_rs::WINDOWS_1252.decode(bytes);
+    }
+    if had_errors {
+        return Err(ImportError::Encoding);
+    }
+
+    let doc = scraper::Html::parse_document(&text);
+    let tr_sel = scraper::Selector::parse("tr").map_err(|_| ImportError::Workbook)?;
+    let mut rows = Vec::new();
+    for (i, tr) in doc.select(&tr_sel).enumerate() {
+        let mut cells = Vec::new();
+        for node in tr.descendants() {
+            let Some(el) = scraper::ElementRef::wrap(node) else {
+                continue;
+            };
+            if !matches!(el.value().name(), "td" | "th") {
+                continue;
+            }
+            // Skip cells that belong to a nested table's own row.
+            let owner = el
+                .ancestors()
+                .filter_map(scraper::ElementRef::wrap)
+                .find(|a| a.value().name() == "tr");
+            if owner.map(|o| o.id()) != Some(tr.id()) {
+                continue;
+            }
+            let text = cell_text(el);
+            cells.push(if text.is_empty() {
+                Cell::Empty
+            } else {
+                Cell::Text(text)
+            });
+            let span = el
+                .value()
+                .attr("colspan")
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(1)
+                .clamp(1, MAX_COLSPAN);
+            cells.extend(std::iter::repeat_n(Cell::Empty, span - 1));
+        }
+        rows.push(RawRow {
+            number: i + 1,
             cells,
         });
     }

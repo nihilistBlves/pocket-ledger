@@ -655,3 +655,176 @@ fn user_profiles_save_replace_and_cannot_shadow_builtins() {
             .builtin
     );
 }
+
+// ---------- HTML table (XHTML saved as .xls) ----------
+
+const XHTML_HEAD: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\
+<html xmlns=\"http://www.w3.org/1999/xhtml\"><head>\n\
+<meta http-equiv=\"Content-Type\" content=\"text/html; charset=CHARSET\" />\n\
+<style>td { color: red }</style><script>var x = '<td>9</td>';</script></head><body>\n";
+
+fn xhtml(charset: &str, body: &str) -> String {
+    format!(
+        "{}{body}</body></html>",
+        XHTML_HEAD.replace("CHARSET", charset)
+    )
+}
+
+const PREAMBLE_ROWS: &str = "<tr><td colspan=\"5\">Cuentas - Movimientos</td></tr>\n\
+<tr><td>N&uacute;mero de cuenta</td><td colspan=\"4\">ES00 0000 0000 0000 0000 0000</td></tr>\n\
+<tr><td>Descripci&oacute;n</td><td colspan=\"4\">Cuenta de prueba</td></tr>\n\
+<tr><td>Titular</td><td colspan=\"4\">Persona Ficticia</td></tr>\n\
+<tr><td>Saldo</td><td colspan=\"4\">1.000,00&nbsp;&euro;</td></tr>\n\
+<tr><td>Fecha de descarga</td><td colspan=\"4\">15/11/2026</td></tr>\n\
+<tr><td colspan=\"5\">&nbsp;</td></tr>\n";
+
+const XHTML_HEADER_ROW: &str = "<tr><th>Fecha de operaci&oacute;n</th><th>Fecha valor</th>\
+<th>Concepto</th><th>Importe</th><th>Saldo</th></tr>\n";
+
+const DATA_ROWS: &str = "<tr><td>05/03/2024</td><td>06/03/2024</td><td>  CAFETERIA\n  LUNA </td><td>-52,30</td><td>947,70</td></tr>\n\
+<tr><td>07/03/2024</td><td>07/03/2024</td><td>N&Oacute;MINA</td><td>1.234,56&nbsp;&euro;</td><td>2.182,26</td></tr>\n\
+<tr><td>08/03/2024</td><td>08/03/2024</td><td>ALQUILER</td><td>&minus;1.234,56 EUR</td><td>947,70</td></tr>\n";
+
+fn check_openbank_rows(parsed: &ParsedImport) {
+    assert!(parsed.errors.is_empty(), "{:?}", parsed.errors);
+    assert_eq!(parsed.rows.len(), 3);
+    assert_eq!(parsed.rows[0].booking_date.as_deref(), Some("2024-03-05"));
+    assert_eq!(parsed.rows[0].value_date.as_deref(), Some("2024-03-06"));
+    assert_eq!(parsed.rows[0].amount_cents, -5_230);
+    assert_eq!(parsed.rows[0].description, "CAFETERIA LUNA");
+    assert_eq!(parsed.rows[1].amount_cents, 123_456);
+    assert_eq!(parsed.rows[1].description, "NÓMINA");
+    assert_eq!(parsed.rows[2].amount_cents, -123_456);
+}
+
+#[test]
+fn xhtml_xls_single_table_is_read_by_the_html_reader() {
+    let doc = xhtml(
+        "UTF-8",
+        &format!("<table>{PREAMBLE_ROWS}{XHTML_HEADER_ROW}{DATA_ROWS}</table>"),
+    );
+    let parsed = parse_file(doc.as_bytes(), "movimientos.xls", &openbank_excel()).expect("parse");
+    check_openbank_rows(&parsed);
+}
+
+#[test]
+fn xhtml_in_windows_1252_keeps_spanish_accents() {
+    let doc = xhtml(
+        "windows-1252",
+        &format!("<table>{PREAMBLE_ROWS}{XHTML_HEADER_ROW}{DATA_ROWS}</table>"),
+    )
+    // Raw accented characters instead of entities, to exercise the decoder.
+    .replace("&Oacute;", "Ó")
+    .replace("&oacute;", "ó");
+    let (bytes, _, unmappable) = encoding_rs::WINDOWS_1252.encode(&doc);
+    assert!(!unmappable);
+    assert!(std::str::from_utf8(&bytes).is_err());
+    let parsed = parse_file(&bytes, "movimientos.xls", &openbank_excel()).expect("parse");
+    check_openbank_rows(&parsed);
+}
+
+#[test]
+fn xhtml_with_preamble_in_a_separate_table_and_bom() {
+    let doc = xhtml(
+        "utf-8",
+        &format!(
+            "<table>{PREAMBLE_ROWS}</table><p>x</p><table><tbody>{XHTML_HEADER_ROW}{DATA_ROWS}</tbody></table>"
+        ),
+    );
+    let mut bytes = b"\xEF\xBB\xBF  \n".to_vec();
+    bytes.extend_from_slice(doc.as_bytes());
+    let parsed = parse_file(&bytes, "movimientos.xls", &openbank_excel()).expect("parse");
+    check_openbank_rows(&parsed);
+}
+
+#[test]
+fn html_colspan_keeps_columns_aligned_and_rows_are_numbered_flat() {
+    let doc = "<table><tr><td colspan=\"2\">A</td><td>B</td></tr><tr></tr>\
+<tr><td>1</td><th colspan=\"3\">2</th><td>3</td></tr></table>";
+    let rows = readers::read_html_table(doc.as_bytes()).expect("read");
+    assert_eq!(rows.len(), 3);
+    let texts = |r: &readers::RawRow| {
+        r.cells
+            .iter()
+            .map(|c| c.text().to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(texts(&rows[0]), ["A", "", "B"]);
+    assert!(rows[1].cells.is_empty());
+    assert_eq!(rows[2].number, 3);
+    assert_eq!(texts(&rows[2]), ["1", "2", "", "", "3"]);
+}
+
+#[test]
+fn html_undeclared_windows_1252_falls_back_instead_of_failing() {
+    // No BOM, no <meta charset>, and "ó" as the single windows-1252 byte 0xF3.
+    let mut doc = b"<html><body><table><tr><td>Operaci".to_vec();
+    doc.push(0xF3);
+    doc.extend_from_slice(b"n</td></tr></table></body></html>");
+    let rows = readers::read_html_table(&doc).expect("read");
+    assert_eq!(rows[0].cells[0].text(), "Operación");
+}
+
+#[test]
+fn html_row_errors_use_flattened_row_numbers() {
+    let doc = xhtml(
+        "UTF-8",
+        &format!(
+            "<table>{XHTML_HEADER_ROW}<tr><td>31/02/2024</td><td></td><td>X</td><td>1,00</td><td></td></tr></table>"
+        ),
+    );
+    let parsed = parse_file(doc.as_bytes(), "m.xls", &openbank_excel()).expect("parse");
+    assert_eq!(parsed.errors.len(), 1);
+    assert_eq!(parsed.errors[0].row_number, 2);
+}
+
+#[test]
+fn html_sniffing_is_by_content() {
+    assert!(readers::looks_like_html(
+        b"\xEF\xBB\xBF \n<!DOCTYPE html PUBLIC"
+    ));
+    assert!(readers::looks_like_html(b"<HTML><body>"));
+    assert!(readers::looks_like_html(b"<table><tr>"));
+    assert!(readers::looks_like_html(
+        b"<?xml version=\"1.0\"?>\n<!DOCTYPE html>\n<html>"
+    ));
+    assert!(!readers::looks_like_html(
+        b"<?xml version=\"1.0\"?><Workbook/>"
+    ));
+    assert!(!readers::looks_like_html(b"PK\x03\x04"));
+    assert!(!readers::looks_like_html(b"Fecha;Importe"));
+
+    // A real xlsx still goes to calamine, HTML named .xlsx goes to the HTML reader.
+    let xlsx = build_xlsx();
+    assert!(!readers::looks_like_html(&xlsx.bytes));
+    assert!(parse_file(&xlsx.bytes, "m.xlsx", &openbank_excel()).is_ok());
+    let doc = xhtml(
+        "UTF-8",
+        &format!("<table>{XHTML_HEADER_ROW}{DATA_ROWS}</table>"),
+    );
+    check_openbank_rows(&parse_file(doc.as_bytes(), "m.xlsx", &openbank_excel()).expect("html"));
+    assert!(matches!(
+        parse_file(b"\x00\x01garbage", "m.xls", &openbank_excel()),
+        Err(ImportError::Workbook)
+    ));
+}
+
+#[test]
+fn amount_text_variants_parse_to_exact_cents() {
+    let style = DecimalSpec {
+        decimal: ',',
+        thousands: Some('.'),
+    }
+    .style();
+    for (text, cents) in [
+        ("-52,30", -5_230),
+        ("-1.234,56", -123_456),
+        ("-1.234,56 €", -123_456),
+        ("\u{2212}52,30", -5_230),
+        ("1.234,56 EUR", 123_456),
+        ("1.234,56\u{a0}€", 123_456),
+    ] {
+        assert_eq!(crate::money::parse_amount(text, style), Ok(cents), "{text}");
+    }
+}

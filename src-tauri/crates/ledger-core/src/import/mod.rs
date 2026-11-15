@@ -1,4 +1,4 @@
-//! File import: CSV or Excel bytes in, `Vec<NewTransaction>` plus per-row errors out.
+//! File import: CSV, Excel or HTML-table bytes in, `Vec<NewTransaction>` plus per-row errors out.
 //!
 //! This module only reads and validates files; it never writes transactions. A later
 //! step hands `ParsedImport::rows` to the ingest pipeline. How a file is read is
@@ -125,6 +125,10 @@ pub fn parse_file(
             encoding,
             quote,
         } => readers::read_csv(bytes, *delimiter, *quote, *encoding)?,
+        // Content decides, not the extension: some banks send an HTML table as `.xls`.
+        FileFormat::Excel { .. } if readers::looks_like_html(bytes) => {
+            readers::read_html_table(bytes)?
+        }
         FileFormat::Excel { sheet } => readers::read_excel(bytes, sheet.as_deref())?,
     };
 

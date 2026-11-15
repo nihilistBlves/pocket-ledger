@@ -211,10 +211,11 @@ pub fn generic_csv_es() -> ImportProfile {
 /// "Fecha valor", "Concepto", "Importe", "Saldo". The balance column is ignored.
 /// Header matching is case- and accent-insensitive and the header row is detected
 /// automatically, so the preamble length does not matter.
-// The export is a legacy .xls (confirmed), read by calamine's BIFF reader.
+// The export is XHTML (XHTML 1.0 Strict DOCTYPE) saved with an .xls extension, so it
+// is read by the HTML-table reader, chosen by content sniffing, not by extension.
 // "Importe" is one signed column: charges negative, income positive (confirmed).
-// UNVERIFIED: whether "Importe" is a numeric cell or "1.234,56" text (both are
-// supported), and that the .xls is real BIFF and not an HTML table renamed .xls.
+// UNVERIFIED: exact HTML structure (tables, colspans, "€" in amounts, charset); the
+// reader and amount parser are tolerant of all of these.
 pub fn openbank_excel() -> ImportProfile {
     ImportProfile {
         format: FileFormat::Excel { sheet: None },
