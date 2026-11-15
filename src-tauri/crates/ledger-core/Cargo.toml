@@ -9,3 +9,12 @@ publish = false
 [dependencies]
 serde = { workspace = true }
 thiserror = { workspace = true }
+rusqlite = { workspace = true }
+rusqlite_migration = { workspace = true }
+zeroize = { workspace = true }
+getrandom = { workspace = true }
+keyring = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
