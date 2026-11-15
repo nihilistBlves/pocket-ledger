@@ -1,0 +1,19 @@
+@import './styles/tokens.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-body);
+  font: 400 14px/1.25 var(--font);
+  letter-spacing: -0.14px;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ul { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--focus-ring); }
+h1 { font-size: 24px; font-weight: 584; line-height: 1.13; letter-spacing: -0.31px; color: var(--text); }
+.muted { color: var(--text-muted); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
