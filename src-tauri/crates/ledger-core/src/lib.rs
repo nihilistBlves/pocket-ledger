@@ -1,6 +1,7 @@
 //! Domain core of Pocket Ledger.
 //!
 //! Pure Rust, no Tauri, no network. Modules:
+//! - [`bank`]: open-banking client (Enable Banking).
 //! - [`money`]: exact parsing/formatting of amounts as signed integer cents.
 //! - [`db`]: encrypted SQLite (SQLCipher) access, schema and migrations.
 //! - [`keystore`]: where secrets (the database key) are kept.
@@ -13,6 +14,7 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::float_arithmetic)]
 
+pub mod bank;
 pub mod db;
 pub mod dedup;
 pub mod import;

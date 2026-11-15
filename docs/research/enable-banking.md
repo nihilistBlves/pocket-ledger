@@ -29,8 +29,18 @@ Account `uid` is only valid while the session is authorized: store our own stabl
 `entry_reference`, `transaction_id` (**not unique, may change**), `booking_date`, `value_date`, `credit_debit_indicator` (`CRDT`/`DBIT`), `transaction_amount { amount: string, currency }`, `creditor`, `debtor`, `remittance_information[]`, `status` (`BOOK`, `PDNG`, `HOLD`, `CNCL`, `RJCT`, `SCHD`, `OTHR`).
 
 Implications:
-- Amount arrives as an unsigned decimal string; sign comes from `credit_debit_indicator`. Parse exactly to cents.
+- Amount arrives as a decimal string (may carry a sign, see below); the authoritative sign comes from `credit_debit_indicator`. Parse exactly to cents.
 - Deduplication cannot rely on `transaction_id`. Use `entry_reference` when present, else a fingerprint (account, booking/value date, signed amount, normalized counterparty + remittance) with an occurrence index for identical same-day rows. Pending → booked transitions must update, not duplicate.
+
+## Verified against the OpenAPI spec (2026-11-15)
+
+- Error body (`ErrorResponse`): `message` (string), `code` (integer, equals the HTTP status), **`error`** (text enum, e.g. `EXPIRED_SESSION`), `detail`. The machine-readable code is in `error`, not `code`. The client keeps only a sanitized `error` and discards `message`/`detail`.
+- `GET /aspsps` returns `{ aspsps: [...] }` (`maximum_consent_validity` in seconds, `psu_types`). Balances: `{ balances: [{ name, balance_amount: { currency, amount }, balance_type }] }`. Transactions: `{ transactions, continuation_key }` (key absent/null on the last page).
+- Account path parameter is named `account_id` but takes the account `uid`. `AccountResource` has `uid`, `account_id.iban`, `identification_hash`, `cash_account_type`, `product`, `currency`, `name`, `details`.
+- `Transaction`: `transaction_amount.amount` matches `^-?d+(.d+)?$` (may be signed, not only unsigned: handle both); `status` enum `BOOK CNCL HOLD OTHR PDNG RJCT SCHD`; `entry_reference` is unique and immutable per account (identification hashes) across sessions; `transaction_id` is not unique.
+- `GET /sessions/{id}` (`GetSessionResponse`) differs from the `POST /sessions` response: `status`, `accounts` (uids only), `accounts_data`, `access`, `aspsp`, `psu_type`, `created`; no `session_id`.
+- PSU-presence headers (`Psu-Ip-Address`, `Psu-User-Agent`, …) are optional per operation; an ASPSP's `required_psu_headers` lists those that mark the PSU as online, and sending only some of them gives `PSU_HEADER_NOT_PROVIDED`. Not sent for now.
+- `Retry-After` is not documented in the spec; the client honours it (seconds) if present.
 
 ## Limits and errors
 

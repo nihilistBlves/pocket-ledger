@@ -63,12 +63,12 @@ fn migrations_apply_and_are_idempotent_on_reopen() {
     let path = dir.path().join("ledger.db");
 
     let conn = open(&path, &test_key()).unwrap();
-    assert_eq!(user_version(&conn), 2);
+    assert_eq!(user_version(&conn), 3);
     let categories = count(&conn, "SELECT count(*) FROM categories");
     drop(conn);
 
     let conn = open(&path, &test_key()).unwrap();
-    assert_eq!(user_version(&conn), 2);
+    assert_eq!(user_version(&conn), 3);
     assert_eq!(count(&conn, "SELECT count(*) FROM categories"), categories);
 }
 

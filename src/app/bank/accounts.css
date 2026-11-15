@@ -1,0 +1,41 @@
+:host { display: contents; }
+.sprite { position: absolute; }
+.banner.alert { margin: 0; }
+.body { line-height: 1.4; color: var(--text-body); }
+.empty { padding: 0 20px 20px; }
+
+.conn { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
+.conn-card { padding: 20px; }
+.conn-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dot-warn { background: var(--negative); }
+.dot-off { background: var(--text-muted); }
+.sub { margin-top: 4px; font-size: 13px; line-height: 1.4; }
+.conn-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 32px; margin-top: 16px; }
+.prog-head { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+.prog-val { color: var(--text); font-weight: 492; }
+.hint { margin-top: 8px; font-size: 12px; }
+.conn-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 216px; }
+.conn-actions p { font-size: 12px; color: var(--text-muted); line-height: 1.4; max-width: 216px; }
+.confirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface-sunken); }
+.confirm .confirm-q { font-size: 13px; font-weight: 492; color: var(--text); }
+.confirm-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.tbl.two tbody td { height: 52px; }
+.tbl .cp { display: block; margin: 3px 0 0; font-size: 12px; color: var(--text-muted); }
+.acc-name { color: var(--text); font-weight: 492; }
+.acc-bal { color: var(--text); }
+.w-type { width: 136px; } .w-bal { width: 128px; } .w-sync { width: 168px; }
+.w-date { width: 152px; } .w-origin { width: 104px; } .w-res { width: 112px; } .w-mov { width: 176px; } .w-dur { width: 96px; }
+
+.res { display: inline-flex; align-items: center; gap: 6px; font-weight: 492; }
+.res.ok { color: var(--positive); }
+.res.err { color: var(--negative); }
+.tbl.top td { vertical-align: top; padding-top: 10px; padding-bottom: 10px; line-height: 1.4; }
+.tbl td.wrap { white-space: normal; padding-left: 24px; }
+.tbl.top th:last-child { padding-left: 24px; }
+
+@media (max-width: 1279px) {
+  .conn { grid-template-columns: 1fr; }
+  .conn-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .conn-actions p { max-width: none; flex-basis: 100%; }
+}

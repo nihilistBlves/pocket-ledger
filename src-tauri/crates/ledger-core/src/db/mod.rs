@@ -88,6 +88,7 @@ pub fn migrations() -> Migrations<'static> {
     Migrations::new(vec![
         M::up(include_str!("migrations/0001_initial.sql")),
         M::up(include_str!("migrations/0002_seed_categories.sql")),
+        M::up(include_str!("migrations/0003_bank_sync.sql")),
     ])
 }
 
