@@ -5,6 +5,7 @@
 //! - [`db`]: encrypted SQLite (SQLCipher) access, schema and migrations.
 //! - [`keystore`]: where secrets (the database key) are kept.
 //! - [`model`]: source-independent transaction shape for the ingest pipeline.
+//! - [`import`]: CSV/Excel file import driven by saved profiles.
 //! - [`normalize`], [`dedup`], [`transfers`], [`rules`], [`ingest`]: the ingest pipeline.
 //!
 //! Money is never a floating point number anywhere in this crate.
@@ -14,6 +15,7 @@
 
 pub mod db;
 pub mod dedup;
+pub mod import;
 pub mod ingest;
 pub mod keystore;
 pub mod model;
