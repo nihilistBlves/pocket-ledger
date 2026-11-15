@@ -1,4 +1,11 @@
+mod bank_commands;
+mod bank_config;
+mod errors;
+mod scheduler;
+mod state;
+
 use serde::Serialize;
+use tauri::Manager;
 
 /// Basic application metadata exposed to the UI.
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -21,7 +28,22 @@ fn app_info() -> AppInfo {
 
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![app_info])
+        // Used from Rust only, to open the bank authorization URL in the system browser.
+        .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let data_dir = app.path().app_data_dir()?;
+            let state = state::AppState::init(&data_dir).map_err(|e| e.to_string())?;
+            app.manage(state);
+            scheduler::spawn(app.handle().clone());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            app_info,
+            bank_commands::bank_overview,
+            bank_commands::bank_connect,
+            bank_commands::bank_sync_now,
+            bank_commands::bank_disconnect,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running Pocket Ledger");
 }
