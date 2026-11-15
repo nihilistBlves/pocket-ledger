@@ -32,7 +32,7 @@ pub enum KeystoreError {
     Db(#[from] DbError),
 }
 
-pub trait SecretStore {
+pub trait SecretStore: Send + Sync {
     /// Returns the secret, or `None` if no entry exists.
     fn get(&self, name: &str) -> Result<Option<Zeroizing<Vec<u8>>>, KeystoreError>;
     /// Creates or overwrites the entry.

@@ -9,6 +9,7 @@
 pub mod callback;
 pub mod connect;
 pub mod enable_banking;
+pub mod overview;
 pub mod sync;
 
 #[cfg(test)]
