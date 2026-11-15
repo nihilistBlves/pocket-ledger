@@ -4,14 +4,14 @@ title: "ADR 0004: Authorization callback"
 
 # ADR 0004: Authorization callback via HTTPS bridge + temporary loopback listener
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-15)
 - **Date:** 2026-11-15
 
 ## Context
 
 After the owner authorizes access at the bank, Enable Banking redirects the browser to a whitelisted `redirect_url` with `code` and `state`. A desktop app has no public HTTPS endpoint. Running local HTTPS needs a self-signed certificate trusted by the browser, which is fragile.
 
-## Decision (proposed)
+## Decision
 
 1. **Registered redirect URL:** `https://nihilistblves.github.io/pocket-ledger/callback.html`, a static page on GitHub Pages ([docs/callback.html](../callback.html)) that does `location.replace("http://127.0.0.1:8080/callback" + location.search)`. It stores and sends nothing; `no-referrer` and `noindex` are set.
 2. **`redirect_url` sent in `POST /auth`** is that exact string, byte for byte.

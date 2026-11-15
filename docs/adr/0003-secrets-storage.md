@@ -4,14 +4,14 @@ title: "ADR 0003: Secrets storage"
 
 # ADR 0003: Secrets storage
 
-- **Status:** Proposed (depends on ADR 0001)
+- **Status:** Accepted (2026-11-15)
 - **Date:** 2026-11-15
 
 ## Context
 
 The app handles: the Enable Banking private key (`.pem`), the Enable Banking application ID, bank session identifiers, and the database key. The repository is public.
 
-## Decision (proposed)
+## Decision
 
 | Item | Where | Notes |
 |---|---|---|

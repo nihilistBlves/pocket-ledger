@@ -4,7 +4,7 @@ title: "ADR 0001: Desktop stack"
 
 # ADR 0001: Desktop stack
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-15)
 - **Date:** 2026-11-15
 
 ## Context
@@ -26,7 +26,7 @@ Criteria, in order: security, maintainability for the owner, packaging/size.
 | Toolchain ready | Yes | Yes | Needs .NET SDK installed in `C:\Dev\tools` |
 | Charts / tables | Mature web ecosystem | Mature web ecosystem | LiveCharts2 / ScottPlot, fewer options |
 
-## Decision (proposed)
+## Decision
 
 **Tauri 2 + Angular**, with a deliberately thin, boring Rust core:
 

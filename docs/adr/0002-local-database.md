@@ -4,14 +4,14 @@ title: "ADR 0002: Local encrypted database"
 
 # ADR 0002: Local encrypted database
 
-- **Status:** Proposed (depends on ADR 0001)
+- **Status:** Accepted (2026-11-15)
 - **Date:** 2026-11-15
 
 ## Context
 
 All financial data must live only on the owner's device, preferably encrypted at rest. Money must never be stored as floating point.
 
-## Decision (proposed)
+## Decision
 
 - **SQLite with SQLCipher** (AES-256 page encryption) via `rusqlite` with the `bundled-sqlcipher-vendored-openssl` feature, so no system library is required.
 - **Database key:** 256-bit random key generated on first run and stored in the OS keyring (ADR 0003). Never written to disk, logs or config.
