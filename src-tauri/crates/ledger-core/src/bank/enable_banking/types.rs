@@ -296,3 +296,12 @@ pub(crate) struct ErrorBody {
     #[serde(default)]
     pub error: Option<String>,
 }
+
+impl State {
+    /// A fresh anti-CSRF state: 128 random bits from the OS generator, hex encoded.
+    pub fn generate() -> Result<Self, getrandom::Error> {
+        let mut bytes = [0u8; 16];
+        getrandom::fill(&mut bytes)?;
+        Ok(State::new(hex::encode(bytes)))
+    }
+}

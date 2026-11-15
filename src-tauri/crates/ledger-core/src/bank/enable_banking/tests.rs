@@ -2,64 +2,23 @@
 //! generated at test time and never committed.
 
 use std::ffi::OsString;
-use std::sync::OnceLock;
 
 use chrono::{NaiveDate, TimeZone, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
-use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey, LineEnding};
-use rsa::PrivateKey;
 use serde_json::{json, Value};
 use tempfile::TempDir;
 use wiremock::matchers::{header_exists, method, path, query_param};
-use wiremock::{Mock, MockServer, Request, ResponseTemplate};
+use wiremock::{Mock, Request, ResponseTemplate};
 
 use super::jwt::{self, Claims};
 use super::*;
+use crate::bank::test_support::{fixture, keys, APP_ID};
 
 const FAKE_IBAN: &str = "ES0000000000000000000000";
 const FAKE_NAME: &str = "Ana Ficticia";
 const FAKE_SESSION: &str = "11111111-aaaa-bbbb-cccc-222222222222";
 const FAKE_UID: &str = "33333333-dddd-eeee-ffff-444444444444";
 const FAKE_CODE: &str = "fake-auth-code-98765";
-const APP_ID: &str = "00000000-test-app";
-
-struct TestKeys {
-    private_pem: String,
-    public_pem: String,
-}
-
-fn keys() -> &'static TestKeys {
-    static KEYS: OnceLock<TestKeys> = OnceLock::new();
-    KEYS.get_or_init(|| {
-        let mut rng = rsa::rand_core::UnwrapErr(getrandom::SysRng);
-        let key = PrivateKey::new(&mut rng, 2048).expect("keygen");
-        TestKeys {
-            private_pem: key.to_pkcs8_pem(LineEnding::LF).expect("pem").to_string(),
-            public_pem: key.to_public_key().to_public_key_pem(LineEnding::LF).expect("pem"),
-        }
-    })
-}
-
-struct Fixture {
-    server: MockServer,
-    client: EbClient,
-    config: EbConfig,
-    _dir: TempDir,
-}
-
-async fn fixture() -> Fixture {
-    let dir = TempDir::new().unwrap();
-    let key_path = dir.path().join("test-key.pem");
-    std::fs::write(&key_path, &keys().private_pem).unwrap();
-    let server = MockServer::start().await;
-    let config = EbConfig {
-        application_id: APP_ID.to_owned(),
-        base_url: server.uri(),
-        key_path,
-    };
-    let client = EbClient::new(config.clone()).unwrap().with_retry_policy(RetryPolicy::immediate());
-    Fixture { server, client, config, _dir: dir }
-}
 
 fn session_json() -> Value {
     json!({
