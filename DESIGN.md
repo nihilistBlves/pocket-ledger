@@ -64,7 +64,7 @@ Warm dark paper, never neutral grey or black.
 | `--badge-honey` | `#5a4519` (text `#f8da9d`) | — |
 | `--badge-wisteria` | `#3f3257` (text `#e4d6fc`) | — |
 
-Theme follows the OS (`prefers-color-scheme`) with a manual override (Light / Dark / System) stored in app settings, applied as `data-theme` on `<html>`.
+Theme follows the OS (`prefers-color-scheme`) with a manual override (Light / Dark / System) stored in app settings. Light/Dark set `data-theme` on `<html>`; System removes it and a `@media (prefers-color-scheme: dark) { :root:not([data-theme]) {…} }` block applies the dark tokens (generated from the same source to avoid drift).
 
 ### Why olive and terracotta for money **[adapted]**
 
@@ -83,7 +83,10 @@ The source's blue→green gradients are replaced with the warm palette. Categori
 | 5 | `#61594a` bark | `#cfc7b8` |
 | 6 | `#9a6a06` gold-deep | `#e8b34a` |
 
-Income vs expense charts: income `--positive`, expense `--text` (espresso bars), balance line `--accent`. Area fills at 12–16 % opacity. Gridlines `--border`, axis labels `--text-muted`.
+| 7 | `#3d6f73` deep teal-grey | `#8fc1c4` |
+| 8 | `#8a4f6b` plum | `#d9a0bb` |
+
+Income vs expense charts: income `--positive`, expense `--text` (espresso bars), balance line `--accent-text` 2px with amber (`--accent`) point markers (plain amber is only ~2:1 on cream, below the 3:1 needed for graphics). Every chart ships a visually hidden data table for screen readers. Area fills at 12–16 % opacity. Gridlines `--border`, axis labels `--text-muted`.
 
 ## 3. Typography
 
@@ -138,8 +141,8 @@ Display sizes (56–72px) from the source are marketing-only and not used in the
 **Sidebar item** — 8px 12px, 14px weight 400, 16px outline icon (1.5px stroke). Active: `--surface-selected` fill + 2px amber bar on the left edge, weight 492.
 **Card** — `--surface`, 1px `--border`, 8px radius, `--shadow-card`, 20–24px padding. Header: `title-sm` + optional caption.
 **KPI tile** — label `caption` `--text-muted`; value `title` tabular; delta `caption` with arrow + sign (`▲ 4,2 %` olive / `▼ 1,8 %` terracotta) vs previous month; optional 32px sparkline.
-**Table** — header `caption` uppercase on `--surface-sunken`, row rules `--border`, no vertical lines. Row 36px. Amount column right-aligned, tabular, signed. Hover `--surface-sunken`; selected `--surface-selected` (on selected rows muted text switches to `--text-body`, since `--text-muted` on Linen is only 3.9:1). Pending rows: italic description + "Pendiente" badge. Internal transfers: `⇄` icon + muted amount, excluded from totals.
-**Tag / badge** — 4px radius, 2px 8px padding, 12px weight 492; honey / wisteria / linen variants. Category chips use a 8px colour dot + text, not full fills.
+**Table** — header `caption` uppercase on `--surface-sunken`, row rules `--border`, no vertical lines. Row 36px. Amount column right-aligned, tabular, signed. Hover `--surface-sunken`; selected `--surface-selected` (on selected rows muted text switches to `--text-body`, since `--text-muted` on Linen is only 3.9:1). Pending rows: italic description + "Pendiente" badge. Responsive columns: below 1440px tags collapse to "first +N"; below 1280px Account and counterparty hide (visible in the detail panel). Internal transfers: `⇄` icon + muted amount, excluded from totals.
+**Tag / badge** — 4px radius, 2px 8px padding, 12px weight 492; honey / wisteria / linen variants (linen gets a 1px `--border-strong` so it stays visible on selected rows). Category chips use a 8px colour dot + text, not full fills.
 **Input / select** — 36px height, 8px radius, `--surface` fill, 1px `--border-strong`, focus ring amber. Placeholder `--text-muted`.
 **Progress / budget bar** — 6px track `--surface-sunken`, fill `--accent`; ≥ 90 % `--accent-border`; > 100 % `--negative` with overflow label.
 **Banner / notice** — consent expiry or sync error: `--surface` with a 3px left border (`--accent` warning, `--negative` error), icon + text + action.
