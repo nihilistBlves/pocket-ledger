@@ -211,8 +211,9 @@ pub fn generic_csv_es() -> ImportProfile {
 /// "Fecha valor", "Concepto", "Importe", "Saldo". The balance column is ignored.
 /// Header matching is case- and accent-insensitive and the header row is detected
 /// automatically, so the preamble length does not matter.
+// The export is a legacy .xls (confirmed), read by calamine's BIFF reader.
 // UNVERIFIED: whether "Importe" is a numeric cell or "1.234,56" text (both are
-// supported) and whether the file is .xls or .xlsx (both are read).
+// supported), and that the .xls is real BIFF and not an HTML table renamed .xls.
 pub fn openbank_excel() -> ImportProfile {
     ImportProfile {
         format: FileFormat::Excel { sheet: None },

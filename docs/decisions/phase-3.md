@@ -34,7 +34,7 @@ Seeded categories carry a stable `key` (e.g. `food.groceries`) so later migratio
 
 ## Import formats (first)
 
-1. **Openbank export** as a fixed profile. Layout confirmed by the owner on 2026-11-15: title "Cuentas - Movimientos", preamble (account number, description, holder, balance, download date), header `Fecha de operación | Fecha valor | Concepto | Importe | Saldo`, dates `dd/MM/yyyy`, no footer. Still unverified: `.xls` vs `.xlsx` and whether `Importe` is numeric or text (both handled). Implemented as a declarative profile so only the profile changes.
+1. **Openbank export** as a fixed profile. Layout confirmed by the owner on 2026-11-15: title "Cuentas - Movimientos", preamble (account number, description, holder, balance, download date), header `Fecha de operación | Fecha valor | Concepto | Importe | Saldo`, dates `dd/MM/yyyy`, no footer. File type: legacy `.xls`. Still unverified: whether `Importe` is numeric or text (both handled), and whether the `.xls` is real BIFF or an HTML table with an `.xls` extension (the latter would need an HTML-table reader). Implemented as a declarative profile so only the profile changes.
 2. **Generic CSV** with column mapping (date, value date, description, amount or debit/credit columns, decimal/thousand separators, date format, delimiter, header rows to skip), saveable as a named profile.
 
 Both feed the same normalization → dedup → transfer → categorization pipeline as bank sync.
