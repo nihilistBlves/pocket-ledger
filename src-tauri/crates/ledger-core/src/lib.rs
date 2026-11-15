@@ -1,12 +1,15 @@
 //! Domain core of Pocket Ledger.
 //!
-//! Pure logic only (money as integer cents, transfer detection, deduplication,
-//! categorization). No I/O, no Tauri, no network, so it stays fully unit-testable.
+//! Pure Rust, no Tauri, no network. Modules:
+//! - [`money`]: exact parsing/formatting of amounts as signed integer cents.
+//! - [`db`]: encrypted SQLite (SQLCipher) access, schema and migrations.
+//! - [`keystore`]: where secrets (the database key) are kept.
+//!
+//! Money is never a floating point number anywhere in this crate.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn crate_builds() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![forbid(unsafe_code)]
+#![deny(clippy::float_arithmetic)]
+
+pub mod db;
+pub mod keystore;
+pub mod money;
