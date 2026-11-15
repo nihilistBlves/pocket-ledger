@@ -154,7 +154,10 @@ mod tests {
             load_or_create_db_key(&store),
             Err(KeystoreError::MalformedStoredKey)
         ));
-        assert_eq!(store.get(DB_KEY_ENTRY).unwrap().unwrap().as_slice(), b"short");
+        assert_eq!(
+            store.get(DB_KEY_ENTRY).unwrap().unwrap().as_slice(),
+            b"short"
+        );
     }
 
     #[test]

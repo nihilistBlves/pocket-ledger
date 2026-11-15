@@ -182,7 +182,11 @@ fn booked_transaction_requires_booking_date() {
 fn rules_uniqueness_treats_null_account_as_one_scope() {
     let conn = mem();
     let cat: i64 = conn
-        .query_row("SELECT id FROM categories WHERE key = 'food.groceries'", [], |r| r.get(0))
+        .query_row(
+            "SELECT id FROM categories WHERE key = 'food.groceries'",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
     let a = add_account(&conn, "A");
     let insert = |account: Option<i64>| {
@@ -221,7 +225,11 @@ fn updated_at_trigger_fires() {
     conn.execute("UPDATE accounts SET name = 'B' WHERE id = ?1", params![a])
         .unwrap();
     let updated: String = conn
-        .query_row("SELECT updated_at FROM accounts WHERE id = ?1", params![a], |r| r.get(0))
+        .query_row(
+            "SELECT updated_at FROM accounts WHERE id = ?1",
+            params![a],
+            |r| r.get(0),
+        )
         .unwrap();
     assert_ne!(updated, "2000-01-01T00:00:00.000Z");
 }
@@ -229,12 +237,28 @@ fn updated_at_trigger_fires() {
 #[test]
 fn seed_categories_shape() {
     let conn = mem();
-    assert_eq!(count(&conn, "SELECT count(*) FROM categories WHERE parent_id IS NULL"), 12);
-    assert_eq!(count(&conn, "SELECT count(*) FROM categories WHERE parent_id IS NOT NULL"), 34);
+    assert_eq!(
+        count(
+            &conn,
+            "SELECT count(*) FROM categories WHERE parent_id IS NULL"
+        ),
+        12
+    );
+    assert_eq!(
+        count(
+            &conn,
+            "SELECT count(*) FROM categories WHERE parent_id IS NOT NULL"
+        ),
+        34
+    );
 
     let kind_of = |key: &str| -> String {
-        conn.query_row("SELECT kind FROM categories WHERE key = ?1", params![key], |r| r.get(0))
-            .unwrap()
+        conn.query_row(
+            "SELECT kind FROM categories WHERE key = ?1",
+            params![key],
+            |r| r.get(0),
+        )
+        .unwrap()
     };
     assert_eq!(kind_of("income"), "income");
     assert_eq!(kind_of("income.salary"), "income");
@@ -243,7 +267,10 @@ fn seed_categories_shape() {
     assert_eq!(kind_of("uncategorized"), "system");
 
     // Only the two system categories are flagged as such, and they have no children.
-    assert_eq!(count(&conn, "SELECT count(*) FROM categories WHERE is_system = 1"), 2);
+    assert_eq!(
+        count(&conn, "SELECT count(*) FROM categories WHERE is_system = 1"),
+        2
+    );
     assert_eq!(
         count(
             &conn,
@@ -254,7 +281,11 @@ fn seed_categories_shape() {
     );
 
     let name: String = conn
-        .query_row("SELECT name FROM categories WHERE key = 'utilities.internet_mobile'", [], |r| r.get(0))
+        .query_row(
+            "SELECT name FROM categories WHERE key = 'utilities.internet_mobile'",
+            [],
+            |r| r.get(0),
+        )
         .unwrap();
     assert_eq!(name, "Internet y móvil");
 

@@ -455,7 +455,11 @@ mod tests {
             ("1,001", ES, MoneyError::TooManyDecimals),
             ("1,234,56", DOT, MoneyError::InvalidCharacter(',')),
             ("1 000", DOT, MoneyError::InvalidCharacter(' ')),
-            ("1\u{00A0}000", DOT, MoneyError::InvalidCharacter('\u{00A0}')),
+            (
+                "1\u{00A0}000",
+                DOT,
+                MoneyError::InvalidCharacter('\u{00A0}'),
+            ),
             ("abc", DOT, MoneyError::InvalidCharacter('a')),
             ("12a", DOT, MoneyError::InvalidCharacter('a')),
             ("1e5", DOT, MoneyError::InvalidCharacter('e')),
@@ -464,7 +468,11 @@ mod tests {
             ("inf", DOT, MoneyError::InvalidCharacter('i')),
             ("-Infinity", DOT, MoneyError::InvalidCharacter('I')),
             ("1.5.0,0", DOT, MoneyError::MultipleDecimalSeparators),
-            ("\u{0661}\u{0662}", DOT, MoneyError::InvalidCharacter('\u{0661}')),
+            (
+                "\u{0661}\u{0662}",
+                DOT,
+                MoneyError::InvalidCharacter('\u{0661}'),
+            ),
             ("1.2.3,4", ES, MoneyError::MisplacedGrouping),
             ("1.23,4", ES, MoneyError::MisplacedGrouping),
             ("12.34.5", ES, MoneyError::MisplacedGrouping),
@@ -525,7 +533,9 @@ mod tests {
         assert_eq!(signed_from_indicator(i64::MAX, "DBIT"), Ok(-i64::MAX));
         assert_eq!(signed_from_indicator(i64::MAX, "CRDT"), Ok(i64::MAX));
 
-        for bad in ["", "crdt", "dbit", "CRDT ", " DBIT", "CR", "DEBIT", "+", "-"] {
+        for bad in [
+            "", "crdt", "dbit", "CRDT ", " DBIT", "CR", "DEBIT", "+", "-",
+        ] {
             assert_eq!(
                 signed_from_indicator(100, bad),
                 Err(MoneyError::InvalidIndicator),
@@ -636,7 +646,18 @@ mod tests {
     #[test]
     fn non_ascii_does_not_panic() {
         // Multi-byte characters near the 3-byte currency checks must not panic.
-        for s in ["€€", "ñ", "ñ€", "€ñ", "12ñ", "éé", "€€€", "EU€", "ñ12", "1€2"] {
+        for s in [
+            "€€",
+            "ñ",
+            "ñ€",
+            "€ñ",
+            "12ñ",
+            "éé",
+            "€€€",
+            "EU€",
+            "ñ12",
+            "1€2",
+        ] {
             assert!(parse_amount(s, DOT).is_err(), "input {s:?}");
         }
     }
