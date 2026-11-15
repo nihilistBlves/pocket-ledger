@@ -1,0 +1,248 @@
+<svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 0 1-9.6 3.7M2.5 8a5.5 5.5 0 0 1 9.6-3.7M12.5 1.8v2.8H9.7M3.5 14.2v-2.8h2.8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.2 1.3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 11.1v.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+</svg>
+
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <button type="button" class="btn btn-secondary" [disabled]="!canSync()" (click)="bank.syncNow()">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-refresh" /></svg>
+      {{ bank.busy() === 'sync' ? t.syncing : t.syncNow }}
+    </button>
+  </div>
+</header>
+
+@if (bank.error(); as err) {
+  <div class="banner is-error alert" role="alert">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+    <div class="banner-body">{{ err.message }}</div>
+    <button type="button" class="btn-icon" [attr.aria-label]="t.dismiss" (click)="bank.clearError()">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x" /></svg>
+    </button>
+  </div>
+}
+
+@if (bank.busy() === 'connect') {
+  <div class="banner alert" role="status">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-clock" /></svg>
+    <div class="banner-body">{{ t.waiting }}</div>
+  </div>
+}
+
+@if (!bank.loaded()) {
+  <p class="muted">{{ t.loading }}</p>
+} @else if (overview(); as ov) {
+  @if (!ov.configured) {
+    <section class="card" aria-labelledby="h-config">
+      <h2 class="title-sm" id="h-config">{{ t.notConfiguredTitle }}</h2>
+      <p class="body">{{ t.notConfiguredBody }}</p>
+    </section>
+  }
+
+  @if (expiring(); as e) {
+    <div class="banner" role="status">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-clock" /></svg>
+      <div class="banner-body">
+        <strong>{{ t.expiringSoon(bankName(), e.days, date(e.validUntil)) }}</strong>
+        {{ t.expiringSoonRest }}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="!canConnect()" (click)="bank.connect()">
+        {{ t.renewNow }}
+      </button>
+    </div>
+  }
+
+  @if (isExpired()) {
+    <div class="banner is-error" role="status">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+      <div class="banner-body">
+        <strong>{{ t.expiredBanner(bankName(), date(validUntil())) }}</strong>
+        {{ t.expiredBannerRest }}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="!canConnect()" (click)="bank.connect()">
+        {{ t.renewNow }}
+      </button>
+    </div>
+  }
+
+  <section class="card conn-card" aria-labelledby="h-conn">
+    <div class="conn">
+      <div>
+        <div class="conn-title">
+          <h2 class="title-sm" id="h-conn">{{ bankName() }}</h2>
+          @if (isConnected()) {
+            <span class="badge badge-linen"><span class="dot" aria-hidden="true"></span>{{ t.badge.connected }}</span>
+          } @else if (isExpired()) {
+            <span class="badge badge-honey"><span class="dot dot-warn" aria-hidden="true"></span>{{ t.badge.expired }}</span>
+          } @else {
+            <span class="badge badge-linen"><span class="dot dot-off" aria-hidden="true"></span>{{ t.badge.notConnected }}</span>
+          }
+        </div>
+        @if (connection(); as c) {
+          @if (c.kind !== 'not_connected') {
+            <p class="muted sub">{{ t.readOnly }} · {{ t.linkedAccounts(ov.accounts.length) }}</p>
+            <div class="conn-grid">
+              <dl class="dl">
+                <dt>{{ t.granted }}</dt>
+                <dd class="num">{{ date(c.granted_on) }}</dd>
+                <dt>{{ c.kind === 'expired' ? t.expiredOn : t.expiresOn }}</dt>
+                <dd class="num">{{ date(c.valid_until) }}</dd>
+                <dt>{{ t.permissions }}</dt>
+                <dd>{{ t.permissionsValue }}</dd>
+              </dl>
+              @if (progress(); as p) {
+                <div>
+                  <div class="prog-head">
+                    <span class="muted">{{ t.daysLeft }}</span>
+                    <span class="num prog-val">{{ t.daysOf(p.days, p.total) }}</span>
+                  </div>
+                  <div
+                    class="progress"
+                    [class.is-warn]="expiring() !== null || isExpired()"
+                    role="progressbar"
+                    [attr.aria-label]="t.progressLabel"
+                    aria-valuemin="0"
+                    [attr.aria-valuemax]="p.total"
+                    [attr.aria-valuenow]="p.days"
+                    [attr.aria-valuetext]="t.daysOf(p.days, p.total)"
+                  >
+                    <span [style.width.%]="p.percent"></span>
+                  </div>
+                  <p class="muted hint">{{ t.warnHint }}</p>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted sub">{{ t.connectHint }}</p>
+          }
+        }
+      </div>
+
+      <div class="conn-actions">
+        @if (connection()?.kind === 'not_connected') {
+          <button type="button" class="btn btn-primary" [disabled]="!canConnect()" (click)="bank.connect()">
+            {{ t.connect }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-primary" [disabled]="!canConnect()" (click)="bank.connect()">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-refresh" /></svg>
+            {{ t.renew }}
+          </button>
+          @if (confirming()) {
+            <div class="confirm" role="group" [attr.aria-label]="t.confirmQuestion(bankName())">
+              <p class="confirm-q">{{ t.confirmQuestion(bankName()) }}</p>
+              <p>{{ t.keepNote }}</p>
+              <div class="confirm-btns">
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="bank.busy() !== null" (click)="confirmDisconnect()">
+                  {{ t.confirmYes }}
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="cancelDisconnect()">{{ t.cancel }}</button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="btn btn-secondary" [disabled]="bank.busy() !== null" (click)="askDisconnect()">
+              {{ t.disconnect }}
+            </button>
+            <p>{{ t.keepNote }}</p>
+          }
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-flush" aria-labelledby="h-acc">
+    <div class="card-head">
+      <h2 class="title-sm" id="h-acc">{{ t.accountsTitle }}</h2>
+      <span class="caption">{{ t.accountsCaption }}</span>
+    </div>
+    @if (ov.accounts.length === 0) {
+      <p class="empty muted">{{ t.accountsEmpty }}</p>
+    } @else {
+      <table class="tbl two">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.cols.account }}</th>
+            <th scope="col" class="w-type">{{ t.cols.type }}</th>
+            <th scope="col" class="r w-bal">{{ t.cols.balance }}</th>
+            <th scope="col" class="w-sync">{{ t.cols.lastSync }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of ov.accounts; track a.id) {
+            <tr>
+              <td>
+                <span class="acc-name">{{ a.name }}</span>
+                @if (mask(a); as m) {
+                  <span class="cp num">{{ m }}</span>
+                }
+              </td>
+              <td>{{ kind(a) }}</td>
+              <td class="r num acc-bal" [class.neg]="(a.balance_cents ?? 0) < 0">{{ money(a) }}</td>
+              <td class="num">{{ dateTime(a.last_synced_at) }}</td>
+            </tr>
+          }
+        </tbody>
+        @if (total(); as sum) {
+          <tfoot>
+            <tr>
+              <td colspan="2">{{ t.total }}</td>
+              <td class="r num">{{ sum }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    }
+  </section>
+
+  <section class="card card-flush" aria-labelledby="h-sync">
+    <div class="card-head">
+      <h2 class="title-sm" id="h-sync">{{ t.historyTitle }}</h2>
+      <span class="caption">{{ t.historyCaption }}@if (nextAuto(); as next) { · {{ next }} }</span>
+    </div>
+    @if (ov.runs.length === 0) {
+      <p class="empty muted">{{ t.historyEmpty }}</p>
+    } @else {
+      <table class="tbl top">
+        <thead>
+          <tr>
+            <th scope="col" class="w-date">{{ t.cols.date }}</th>
+            <th scope="col" class="w-origin">{{ t.cols.origin }}</th>
+            <th scope="col" class="w-res">{{ t.cols.result }}</th>
+            <th scope="col" class="w-mov">{{ t.cols.movements }}</th>
+            <th scope="col" class="r w-dur">{{ t.cols.duration }}</th>
+            <th scope="col">{{ t.cols.detail }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of ov.runs; track r.started_at) {
+            <tr>
+              <td class="num">{{ dateTime(r.started_at) }}</td>
+              <td>{{ t.trigger[r.trigger] }}</td>
+              <td>
+                @if (r.status === 'ok') {
+                  <span class="res ok"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>{{ resultLabel(r) }}</span>
+                } @else if (r.status === 'error') {
+                  <span class="res err"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>{{ resultLabel(r) }}</span>
+                } @else {
+                  <span class="res"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-clock" /></svg>{{ resultLabel(r) }}</span>
+                }
+              </td>
+              <td class="num">{{ movements(r) }}</td>
+              <td class="num r">{{ duration(r.duration_ms) }}</td>
+              @if (r.status === 'error') {
+                <td class="wrap">{{ detail(r.error_code) }}</td>
+              } @else {
+                <td class="wrap muted">—</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+}
