@@ -1,0 +1,68 @@
+# --- Secrets & keys (NEVER commit) ---
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+.env
+.env.*
+!.env.example
+secrets/
+*.secret*
+
+# --- Local financial data (NEVER commit) ---
+*.db
+*.db-*
+*.sqlite
+*.sqlite*
+*.sqlcipher
+data/
+backups/
+exports/
+imports/
+*.csv
+*.xlsx
+*.xls
+!**/fixtures/**/*.csv
+!**/fixtures/**/*.xlsx
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Node / Angular ---
+node_modules/
+.angular/
+dist/
+out/
+coverage/
+.npm/
+
+# --- Rust / Tauri ---
+target/
+src-tauri/gen/
+
+# --- .NET ---
+bin/
+obj/
+*.user
+.vs/
+
+# --- Build / packaging ---
+build/
+release/
+*.msi
+*.exe
+*.dmg
+*.AppImage
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# --- Claude Code local settings ---
+.claude/settings.local.json
