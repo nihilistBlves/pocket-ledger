@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>Returning to the app</title>
+</head>
+<body>
+<p>Returning to the app. You can close this tab afterwards.</p>
+<script>
+  // Static bridge page: forwards the bank authorization redirect to the local
+  // desktop app's temporary loopback listener. Stores and sends nothing else.
+  window.location.replace("http://127.0.0.1:8080/callback" + window.location.search);
+</script>
+</body>
+</html>
