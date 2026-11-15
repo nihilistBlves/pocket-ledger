@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es-ES">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resumen · pocket-ledger</title>
+<!-- Mock only: the app bundles Inter locally (no remote fonts in production, CSP). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..600&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<script>(function(){try{var t=localStorage.getItem('pl-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-overview" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></symbol><symbol id="i-moves" viewBox="0 0 16 16"><path d="M5 14V2M5 14l-2.5-2.5M5 14l2.5-2.5M11 2v12M11 2L8.5 4.5M11 2l2.5 2.5"/></symbol><symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 3.5a1 1 0 0 1 1-1h4.1a1 1 0 0 1 .7.3l5.2 5.2a1 1 0 0 1 0 1.4l-4.1 4.1a1 1 0 0 1-1.4 0L2.8 8.3a1 1 0 0 1-.3-.7z"/><circle cx="5.5" cy="5.5" r=".75"/></symbol><symbol id="i-filter" viewBox="0 0 16 16"><path d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5z"/></symbol><symbol id="i-pie" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 2v6h6"/></symbol><symbol id="i-bank" viewBox="0 0 16 16"><path d="M2 6.5L8 3l6 3.5zM4 8v3.5M8 8v3.5M12 8v3.5M2.5 13.5h11"/></symbol><symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 10V2.5M5 5l3-3 3 3M2.5 10v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/></symbol><symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2 4h5M11 4h3M2 12h2M8 12h6"/><circle cx="9" cy="4" r="2"/><circle cx="6" cy="12" r="2"/></symbol><symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></symbol><symbol id="i-left" viewBox="0 0 16 16"><path d="M10 3.5L5.5 8l4.5 4.5"/></symbol><symbol id="i-right" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"/></symbol><symbol id="i-down" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol><symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 0 1-9.6 3.7M2.5 8a5.5 5.5 0 0 1 9.6-3.7M12.5 1.8v2.8H9.7M3.5 14.2v-2.8h2.8"/></symbol><symbol id="i-swap" viewBox="0 0 16 16"><path d="M2 5.5h11M10.5 3L13 5.5 10.5 8M14 10.5H3M5.5 8L3 10.5 5.5 13"/></symbol><symbol id="i-calendar" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></symbol><symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.2 1.3"/></symbol><symbol id="i-alert" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 11.1v.01"/></symbol><symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.5"/></symbol><symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol><symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol><symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2.5v8M5 7.5l3 3 3-3M2.5 13.5h11"/></symbol><symbol id="i-file" viewBox="0 0 16 16"><path d="M4 1.5h5l3.5 3.5v9a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5v-12A.5.5 0 0 1 4 1.5zM9 1.5V5h3.5"/></symbol><symbol id="i-book" viewBox="0 0 16 16"><path d="M3.5 2h8.5a1 1 0 0 1 1 1v10.5H4.5a1 1 0 0 1-1-1zM3.5 12.5a1 1 0 0 1 1-1H13M6 5h4"/></symbol><symbol id="i-sortdown" viewBox="0 0 16 16"><path d="M8 3v10M4.5 9.5L8 13l3.5-3.5"/></symbol><symbol id="i-arrowdown" viewBox="0 0 16 16"><path d="M8 3v9M4.5 8.5L8 12l3.5-3.5"/></symbol></svg>
+<div class="app">
+    <aside class="sidebar">
+      <div class="brand"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-book"/></svg><span>pocket-ledger</span></div>
+      <nav class="nav" aria-label="Principal"><ul>
+        <li><a href="dashboard.html" aria-current="page"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-overview"/></svg><span>Resumen</span></a></li>
+        <li><a href="transactions.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-moves"/></svg><span>Movimientos</span></a></li>
+        <li><a href="#"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-tag"/></svg><span>Categorías</span></a></li>
+        <li><a href="#"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-filter"/></svg><span>Reglas</span></a></li>
+        <li><a href="#"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-pie"/></svg><span>Presupuestos</span></a></li>
+        <li><a href="accounts.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-bank"/></svg><span>Cuentas</span></a></li>
+        <li><a href="accounts.html#importar"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-upload"/></svg><span>Importar</span></a></li>
+      </ul></nav>
+      <div class="sidebar-foot">
+        <div class="status"><span class="dot" aria-hidden="true"></span><span>Sincronizado hace 2 h</span></div>
+        <div class="status"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-clock"/></svg><span>Consentimiento: 142 días</span></div>
+        <nav aria-label="Secundaria" class="nav"><ul><li><a href="#"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-sliders"/></svg><span>Ajustes</span></a></li></ul></nav>
+        <div class="theme-block">
+        <span class="caption theme-label" id="theme-label">Tema</span>
+        <div class="theme-toggle" role="group" aria-labelledby="theme-label">
+          <button type="button" data-theme="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Oscuro</button>
+          <button type="button" data-theme="system" aria-pressed="true">Sistema</button>
+        </div>
+      </div>
+      </div>
+    </aside>
+    <main class="main" id="main">
+
+      <header class="page-head">
+        <h1>Resumen</h1>
+        <div class="page-actions">
+          <div class="month" role="group" aria-label="Mes">
+        <button type="button" class="btn-icon" aria-label="Mes anterior"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-left"/></svg></button>
+        <span class="month-label">noviembre 2026</span>
+        <button type="button" class="btn-icon" aria-label="Mes siguiente"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-right"/></svg></button>
+      </div>
+          <label class="search"><span class="sr-only">Buscar movimientos</span><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-search"/></svg><input class="input" type="search" placeholder="Buscar movimientos" style="width:220px"><kbd aria-hidden="true">Ctrl K</kbd></label>
+          <button type="button" class="btn btn-primary"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-refresh"/></svg>Sincronizar</button>
+        </div>
+      </header>
+
+      <section class="card kpis" aria-label="Indicadores de noviembre 2026">
+      <div class="kpi">
+        <div class="kpi-label">Ingresos</div>
+        <div class="kpi-value num">2.855,00 €</div>
+        <div class="kpi-delta"><span class="delta good num"><span aria-hidden="true">▲</span> <span class="sr-only">Sube </span>16,5 %</span><span>vs. 1–15 oct</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Gastos</div>
+        <div class="kpi-value num">1.608,85 €</div>
+        <div class="kpi-delta"><span class="delta good num"><span aria-hidden="true">▼</span> <span class="sr-only">Baja </span>7,6 %</span><span>vs. 1–15 oct</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Balance</div>
+        <div class="kpi-value num">+1.246,15 €</div>
+        <div class="kpi-delta"><span class="delta good num"><span aria-hidden="true">▲</span> <span class="sr-only">Sube </span>76,0 %</span><span>vs. 1–15 oct</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Tasa de ahorro</div>
+        <div class="kpi-value num">43,6 %</div>
+        <div class="kpi-delta"><span class="delta good num"><span aria-hidden="true">▲</span> <span class="sr-only">Sube </span>14,7 p. p.</span><span>vs. 1–15 oct</span></div>
+      </div>
+      </section>
+
+      <div class="grid">
+        <section class="card span-8" aria-labelledby="h-evo">
+          <div class="card-head"><h2 class="title-sm" id="h-evo">Evolución mensual</h2><span class="caption">Últimos 12 meses · dic 2025 – nov 2026</span></div>
+          <div class="legend" aria-hidden="true"><span><i class="sw" style="background:var(--positive)"></i>Ingresos</span><span><i class="sw" style="background:var(--text)"></i>Gastos</span><span><i class="sw sw-line"></i>Balance</span><span class="muted">* Noviembre, hasta el 15</span></div>
+          <figure><svg class="chart" viewBox="0 0 760 266" role="img" aria-labelledby="chart-t chart-d"><title id="chart-t">Evolución mensual de ingresos, gastos y balance</title><desc id="chart-d">Últimos 12 meses. Noviembre 2026 acumulado hasta el día 15. Los datos están en la tabla accesible siguiente.</desc><line class="grid-l" x1="56" x2="752" y1="55" y2="55"/><text x="48" y="59" text-anchor="end">3.000</text><line class="grid-l" x1="56" x2="752" y1="105" y2="105"/><text x="48" y="109" text-anchor="end">2.000</text><line class="grid-l" x1="56" x2="752" y1="155" y2="155"/><text x="48" y="159" text-anchor="end">1.000</text><line class="zero-l" x1="56" x2="752" y1="205" y2="205"/><text x="48" y="209" text-anchor="end">0</text><text x="48" y="14" text-anchor="end">€</text><g><title>dic: ingresos 3.250 €, gastos 2.310 €, balance 940 €</title><rect class="bar-in" x="68" y="42.5" width="16" height="162.5" rx="2"/><rect class="bar-out" x="86" y="89.5" width="16" height="115.5" rx="2"/></g><text class="" x="85" y="252" text-anchor="middle">dic</text><g><title>ene: ingresos 2.450 €, gastos 1.980 €, balance 470 €</title><rect class="bar-in" x="126" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="144" y="106" width="16" height="99.0" rx="2"/></g><text class="" x="143" y="252" text-anchor="middle">ene</text><g><title>feb: ingresos 2.450 €, gastos 1.875 €, balance 575 €</title><rect class="bar-in" x="184" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="202" y="111.3" width="16" height="93.8" rx="2"/></g><text class="" x="201" y="252" text-anchor="middle">feb</text><g><title>mar: ingresos 2.830 €, gastos 2.060 €, balance 770 €</title><rect class="bar-in" x="242" y="63.5" width="16" height="141.5" rx="2"/><rect class="bar-out" x="260" y="102" width="16" height="103.0" rx="2"/></g><text class="" x="259" y="252" text-anchor="middle">mar</text><g><title>abr: ingresos 2.450 €, gastos 1.940 €, balance 510 €</title><rect class="bar-in" x="300" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="318" y="108" width="16" height="97.0" rx="2"/></g><text class="" x="317" y="252" text-anchor="middle">abr</text><g><title>may: ingresos 2.830 €, gastos 2.205 €, balance 625 €</title><rect class="bar-in" x="358" y="63.5" width="16" height="141.5" rx="2"/><rect class="bar-out" x="376" y="94.8" width="16" height="110.3" rx="2"/></g><text class="" x="375" y="252" text-anchor="middle">may</text><g><title>jun: ingresos 2.450 €, gastos 2.120 €, balance 330 €</title><rect class="bar-in" x="416" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="434" y="99" width="16" height="106.0" rx="2"/></g><text class="" x="433" y="252" text-anchor="middle">jun</text><g><title>jul: ingresos 2.980 €, gastos 2.540 €, balance 440 €</title><rect class="bar-in" x="474" y="56" width="16" height="149.0" rx="2"/><rect class="bar-out" x="492" y="78" width="16" height="127.0" rx="2"/></g><text class="" x="491" y="252" text-anchor="middle">jul</text><g><title>ago: ingresos 2.450 €, gastos 2.690 €, balance −240 €</title><rect class="bar-in" x="532" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="550" y="70.5" width="16" height="134.5" rx="2"/></g><text class="" x="549" y="252" text-anchor="middle">ago</text><g><title>sep: ingresos 2.450 €, gastos 1.910 €, balance 540 €</title><rect class="bar-in" x="590" y="82.5" width="16" height="122.5" rx="2"/><rect class="bar-out" x="608" y="109.5" width="16" height="95.5" rx="2"/></g><text class="" x="607" y="252" text-anchor="middle">sep</text><g><title>oct: ingresos 2.830 €, gastos 2.140 €, balance 690 €</title><rect class="bar-in" x="648" y="63.5" width="16" height="141.5" rx="2"/><rect class="bar-out" x="666" y="98" width="16" height="107.0" rx="2"/></g><text class="" x="665" y="252" text-anchor="middle">oct</text><rect class="month-bg" x="696" y="8" width="54" height="230" rx="4"/><g><title>nov: ingresos 2.855 €, gastos 1.609 €, balance 1.246 €</title><rect class="bar-in" x="706" y="62.3" width="16" height="142.8" rx="2"/><rect class="bar-out" x="724" y="124.6" width="16" height="80.4" rx="2"/></g><text class="now" x="723" y="252" text-anchor="middle">nov*</text><polyline class="bal-line" points="85,158 143,181.5 201,176.3 259,166.5 317,179.5 375,173.8 433,188.5 491,183 549,217 607,178 665,170.5 723,142.7"/><circle class="bal-dot" cx="85" cy="158" r="3"/><circle class="bal-dot" cx="143" cy="181.5" r="3"/><circle class="bal-dot" cx="201" cy="176.3" r="3"/><circle class="bal-dot" cx="259" cy="166.5" r="3"/><circle class="bal-dot" cx="317" cy="179.5" r="3"/><circle class="bal-dot" cx="375" cy="173.8" r="3"/><circle class="bal-dot" cx="433" cy="188.5" r="3"/><circle class="bal-dot" cx="491" cy="183" r="3"/><circle class="bal-dot" cx="549" cy="217" r="3"/><circle class="bal-dot" cx="607" cy="178" r="3"/><circle class="bal-dot" cx="665" cy="170.5" r="3"/><circle class="bal-dot" cx="723" cy="142.7" r="3"/></svg><table class="sr-only"><caption>Evolución mensual, en euros</caption><thead><tr><th scope="col">Mes</th><th scope="col">Ingresos</th><th scope="col">Gastos</th><th scope="col">Balance</th></tr></thead><tbody><tr><th scope="row">dic</th><td>3.250,00 €</td><td>2.310,00 €</td><td>940,00 €</td></tr><tr><th scope="row">ene</th><td>2.450,00 €</td><td>1.980,00 €</td><td>470,00 €</td></tr><tr><th scope="row">feb</th><td>2.450,00 €</td><td>1.875,00 €</td><td>575,00 €</td></tr><tr><th scope="row">mar</th><td>2.830,00 €</td><td>2.060,00 €</td><td>770,00 €</td></tr><tr><th scope="row">abr</th><td>2.450,00 €</td><td>1.940,00 €</td><td>510,00 €</td></tr><tr><th scope="row">may</th><td>2.830,00 €</td><td>2.205,00 €</td><td>625,00 €</td></tr><tr><th scope="row">jun</th><td>2.450,00 €</td><td>2.120,00 €</td><td>330,00 €</td></tr><tr><th scope="row">jul</th><td>2.980,00 €</td><td>2.540,00 €</td><td>440,00 €</td></tr><tr><th scope="row">ago</th><td>2.450,00 €</td><td>2.690,00 €</td><td>−240,00 €</td></tr><tr><th scope="row">sep</th><td>2.450,00 €</td><td>1.910,00 €</td><td>540,00 €</td></tr><tr><th scope="row">oct</th><td>2.830,00 €</td><td>2.140,00 €</td><td>690,00 €</td></tr><tr><th scope="row">nov (hasta el 15)</th><td>2.855,00 €</td><td>1.608,85 €</td><td>1.246,15 €</td></tr></tbody></table></figure>
+        </section>
+
+        <section class="card span-4" aria-labelledby="h-cat">
+          <div class="card-head"><h2 class="title-sm" id="h-cat">Gastos por categoría</h2><span class="caption">nov 2026</span></div>
+          <ul class="catlist">
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c1"></i>Vivienda</span><span class="num">895,00 €</span><span class="pct num">55,6 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c1" style="width:100.0%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c2"></i>Supermercado</span><span class="num">235,53 €</span><span class="pct num">14,6 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c2" style="width:26.3%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c3"></i>Transporte</span><span class="num">134,60 €</span><span class="pct num">8,4 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c3" style="width:15.0%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c4"></i>Suministros</span><span class="num">123,30 €</span><span class="pct num">7,7 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c4" style="width:13.8%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c5"></i>Compras</span><span class="num">74,94 €</span><span class="pct num">4,7 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c5" style="width:8.4%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i class="c6"></i>Restaurantes</span><span class="num">54,90 €</span><span class="pct num">3,4 %</span></div>
+            <div class="bar" aria-hidden="true"><span class="c6" style="width:6.1%"></span></div>
+          </li>
+          <li>
+            <div class="catrow-top"><span class="cat"><i></i>Otros <span class="muted">(4)</span></span><span class="num">90,58 €</span><span class="pct num">5,6 %</span></div>
+            <div class="bar" aria-hidden="true"><span style="width:10.1%"></span></div>
+          </li>
+          </ul>
+          <div class="total-line"><span>Total gastos</span><span class="num">1.608,85 €</span></div>
+        </section>
+
+        <section class="card span-4" aria-labelledby="h-acc">
+          <div class="card-head"><h2 class="title-sm" id="h-acc">Saldo por cuenta</h2><a href="accounts.html">Ver cuentas</a></div>
+          <ul class="acct-list">
+            <li><div class="grow"><div class="name">Cuenta Nómina</div><div class="sub num">•••• 4821 · hace 2 h</div></div><div class="bal num">3.184,52 €</div></li>
+            <li><div class="grow"><div class="name">Cuenta Ahorro</div><div class="sub num">•••• 7390 · hace 2 h</div></div><div class="bal num">8.300,00 €</div></li>
+            <li><div class="grow"><div class="name">Tarjeta de crédito</div><div class="sub num">•••• 0156 · pendiente de cargo</div></div><div class="bal num">−105,73 €</div></li>
+          </ul>
+          <div class="total-line" style="margin-top:0;border-top:0;padding-top:16px"><span>Total</span><span class="num">11.378,79 €</span></div>
+        </section>
+
+        <section class="card card-flush span-8" aria-labelledby="h-last">
+          <div class="card-head"><h2 class="title-sm" id="h-last">Últimos movimientos</h2><a href="transactions.html">Ver todos (25)</a></div>
+          <table class="tbl" style="margin-top:12px">
+            <thead><tr><th scope="col" style="width:72px">Fecha</th><th scope="col">Descripción</th><th scope="col" style="width:160px">Categoría</th><th scope="col" class="r" style="width:112px">Importe</th></tr></thead>
+            <tbody>
+            <tr class="is-pending">
+              <td class="num muted">15/11</td>
+              <td title="Repsol · Estación de servicio · Getafe"><span class="desc">Repsol</span> <span class="badge badge-honey">Pendiente</span></td>
+              <td><span class="cat"><i class="c3"></i>Transporte</span></td>
+              <td class="r num ">−52,30 €</td>
+            </tr>
+            <tr>
+              <td class="num muted">14/11</td>
+              <td title="Mercadona · Mercadona S.A. · Getafe"><span class="desc">Mercadona</span></td>
+              <td><span class="cat"><i class="c2"></i>Supermercado</span></td>
+              <td class="r num ">−63,18 €</td>
+            </tr>
+            <tr>
+              <td class="num muted">14/11</td>
+              <td title="Cena Casa Lola · Taberna Casa Lola S.L."><span class="desc">Cena Casa Lola</span></td>
+              <td><span class="cat"><i class="c6"></i>Restaurantes</span></td>
+              <td class="r num ">−48,50 €</td>
+            </tr>
+            <tr>
+              <td class="num muted">13/11</td>
+              <td title="Bizum de Marta · Marta R. · reembolso cena"><span class="desc">Bizum de Marta</span></td>
+              <td><span class="cat"><i class=""></i>Reembolsos</span></td>
+              <td class="r num amt-pos">+25,00 €</td>
+            </tr>
+            <tr>
+              <td class="num muted">12/11</td>
+              <td title="Netflix · Netflix International B.V."><span class="desc">Netflix</span></td>
+              <td><span class="cat"><i class=""></i>Suscripciones</span></td>
+              <td class="r num ">−13,99 €</td>
+            </tr>
+            <tr>
+              <td class="num muted">12/11</td>
+              <td title="Farmacia Central · Farmacia Central · Getafe"><span class="desc">Farmacia Central</span></td>
+              <td><span class="cat"><i class=""></i>Salud</span></td>
+              <td class="r num ">−17,45 €</td>
+            </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+</div>
+<script>(function(){var root=document.documentElement,btns=document.querySelectorAll('.theme-toggle button');
+function cur(){var t=root.getAttribute('data-theme');return t==='light'||t==='dark'?t:'system';}
+function paint(){var c=cur();btns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.theme===c));});}
+btns.forEach(function(b){b.addEventListener('click',function(){var t=b.dataset.theme;if(t==='system')root.removeAttribute('data-theme');else root.setAttribute('data-theme',t);try{localStorage.setItem('pl-theme',t);}catch(e){}paint();});});paint();})();</script>
+</body>
+</html>
