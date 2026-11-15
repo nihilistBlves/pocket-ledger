@@ -203,19 +203,24 @@ pub fn generic_csv_es() -> ImportProfile {
     }
 }
 
-/// Openbank Excel export.
-// UNVERIFIED: the real layout has not been checked against an actual export. This
-// assumes an .xls/.xlsx with a few title rows, then a header row with "Fecha Operación",
-// "Fecha Valor", "Concepto", "Importe", "Saldo" (balance is ignored). Only this
-// function should need to change once the owner confirms the real header row.
+/// Openbank Excel export ("Cuentas - Movimientos").
+///
+/// Layout confirmed by the owner on 2026-11-15 (header names and order, preamble,
+/// date format, no footer): a title row, preamble rows (account number, description,
+/// holder, balance, download date), then the header "Fecha de operación",
+/// "Fecha valor", "Concepto", "Importe", "Saldo". The balance column is ignored.
+/// Header matching is case- and accent-insensitive and the header row is detected
+/// automatically, so the preamble length does not matter.
+// UNVERIFIED: whether "Importe" is a numeric cell or "1.234,56" text (both are
+// supported) and whether the file is .xls or .xlsx (both are read).
 pub fn openbank_excel() -> ImportProfile {
     ImportProfile {
         format: FileFormat::Excel { sheet: None },
         skip_rows: None,
         has_header: true,
         columns: Columns {
-            booking_date: name("Fecha Operación"),
-            value_date: Some(name("Fecha Valor")),
+            booking_date: name("Fecha de operación"),
+            value_date: Some(name("Fecha valor")),
             description: name("Concepto"),
             counterparty: None,
             remittance: None,
@@ -245,7 +250,7 @@ pub struct StoredProfile {
 pub fn profiles_seed() -> Vec<(String, ImportProfile)> {
     vec![
         ("Generic CSV (es-ES)".to_string(), generic_csv_es()),
-        ("Openbank Excel (unverified)".to_string(), openbank_excel()),
+        ("Openbank Excel".to_string(), openbank_excel()),
     ]
 }
 

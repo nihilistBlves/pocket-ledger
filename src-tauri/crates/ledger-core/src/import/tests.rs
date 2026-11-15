@@ -412,19 +412,38 @@ struct SheetRows {
     bytes: Vec<u8>,
 }
 
-/// Builds an .xlsx like the assumed Openbank layout: title rows, header, data.
+/// 0-based row index of the header in [`build_xlsx`]. Data starts right after it.
+const HEADER_ROW: u32 = 7;
+
+/// Builds an .xlsx like the real Openbank export (layout confirmed by the owner):
+/// title, preamble rows (fictitious values), blank row, header, data.
 fn build_xlsx() -> SheetRows {
     let mut workbook = Workbook::new();
     let sheet = workbook.add_worksheet();
     let date_format = Format::new().set_num_format("dd/mm/yyyy");
 
     sheet
-        .write_string(0, 0, "Movimientos cuenta demo")
+        .write_string(0, 0, "Cuentas - Movimientos")
         .expect("write");
-    // row index 1 stays empty
+    // Preamble. "Saldo" here must not be mistaken for the header row.
+    for (i, (label, value)) in [
+        ("Número de cuenta", "ES00 0000 0000 0000 0000 0000"),
+        ("Descripción", "Cuenta demo"),
+        ("Titular", "Persona Ficticia"),
+        ("Saldo", "1.000,00"),
+        ("Fecha de descarga", "13/11/2026"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let row = 1 + i as u32;
+        sheet.write_string(row, 0, *label).expect("write");
+        sheet.write_string(row, 1, *value).expect("write");
+    }
+    // row index 6 stays empty
     for (col, title) in [
-        "Fecha Operación",
-        "Fecha Valor",
+        "Fecha de operación",
+        "Fecha valor",
         "Concepto",
         "Importe",
         "Saldo",
@@ -432,49 +451,52 @@ fn build_xlsx() -> SheetRows {
     .iter()
     .enumerate()
     {
-        sheet.write_string(2, col as u16, *title).expect("write");
+        sheet
+            .write_string(HEADER_ROW, col as u16, *title)
+            .expect("write");
     }
+    let r = HEADER_ROW + 1;
 
-    // Excel row 4: string dates, numeric amount 12.34
-    sheet.write_string(3, 0, "05/03/2024").expect("write");
-    sheet.write_string(3, 1, "05/03/2024").expect("write");
+    // string dates, numeric amount 12.34
+    sheet.write_string(r, 0, "05/03/2024").expect("write");
+    sheet.write_string(r, 1, "05/03/2024").expect("write");
     sheet
-        .write_string(3, 2, "  CAFETERIA   LUNA ")
+        .write_string(r, 2, "  CAFETERIA   LUNA ")
         .expect("write");
-    sheet.write_number(3, 3, 12.34).expect("write");
+    sheet.write_number(r, 3, 12.34).expect("write");
 
-    // Excel row 5: real date cells, -1234.5
+    // real date cells, -1234.5
     let d = ExcelDateTime::from_ymd(2024, 2, 29).expect("date");
     sheet
-        .write_datetime_with_format(4, 0, &d, &date_format)
+        .write_datetime_with_format(r + 1, 0, &d, &date_format)
         .expect("write");
     sheet
-        .write_datetime_with_format(4, 1, &d, &date_format)
+        .write_datetime_with_format(r + 1, 1, &d, &date_format)
         .expect("write");
     sheet
-        .write_string(4, 2, "SUPERMERCADOS NORTE")
+        .write_string(r + 1, 2, "SUPERMERCADOS NORTE")
         .expect("write");
-    sheet.write_number(4, 3, -1234.5).expect("write");
+    sheet.write_number(r + 1, 3, -1234.5).expect("write");
 
-    // Excel row 6: amount that is not exactly representable in cents
-    sheet.write_string(5, 0, "06/03/2024").expect("write");
+    // amount that is not exactly representable in cents
+    sheet.write_string(r + 2, 0, "06/03/2024").expect("write");
     sheet
-        .write_string(5, 2, "NOMINA EMPRESA DEMO")
+        .write_string(r + 2, 2, "NOMINA EMPRESA DEMO")
         .expect("write");
     sheet
-        .write_number(5, 3, 0.300_000_000_000_000_04)
+        .write_number(r + 2, 3, 0.300_000_000_000_000_04)
         .expect("write");
 
-    // Excel row 7: text amount in Spanish style
-    sheet.write_string(6, 0, "07/03/2024").expect("write");
+    // text amount in Spanish style
+    sheet.write_string(r + 3, 0, "07/03/2024").expect("write");
     sheet
-        .write_string(6, 2, "TRANSFERENCIA DEMO")
+        .write_string(r + 3, 2, "TRANSFERENCIA DEMO")
         .expect("write");
-    sheet.write_string(6, 3, "1.234,56").expect("write");
+    sheet.write_string(r + 3, 3, "1.234,56").expect("write");
 
-    // Excel row 8: summary row
-    sheet.write_string(7, 0, "Saldo final").expect("write");
-    sheet.write_number(7, 4, 99.0).expect("write");
+    // summary row (the real export has none; kept to test row-level errors)
+    sheet.write_string(r + 4, 0, "Saldo final").expect("write");
+    sheet.write_number(r + 4, 4, 99.0).expect("write");
 
     SheetRows {
         bytes: workbook.save_to_buffer().expect("xlsx bytes"),
@@ -508,7 +530,8 @@ fn xlsx_float_noise_and_summary_rows_are_row_errors() {
 
     assert_eq!(parsed.errors.len(), 2);
     // 0.30000000000000004 is rejected, never rounded to 0.30.
-    assert_eq!(parsed.errors[0].row_number, 6);
+    // row_number is the 1-based spreadsheet row.
+    assert_eq!(parsed.errors[0].row_number, HEADER_ROW as usize + 4);
     assert_eq!(
         parsed.errors[0].reason,
         RowErrorKind::InvalidAmount {
@@ -517,7 +540,7 @@ fn xlsx_float_noise_and_summary_rows_are_row_errors() {
         }
     );
     // "Saldo final" fails the date parse.
-    assert_eq!(parsed.errors[1].row_number, 8);
+    assert_eq!(parsed.errors[1].row_number, HEADER_ROW as usize + 6);
     assert!(matches!(
         parsed.errors[1].reason,
         RowErrorKind::InvalidDate { .. }
