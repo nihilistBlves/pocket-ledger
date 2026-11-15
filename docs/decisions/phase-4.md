@@ -28,6 +28,10 @@ Verified end to end with the sandbox application and the Mock ASPSP, the owner a
 - Accounts linked, manual sync stored balances and transactions, run recorded as `ok`.
 - The app log contains no tokens, session ids or IBANs.
 
+## Production checkpoint (2026-11-16)
+
+With the owner's explicit go-ahead, the restricted production application connected to Openbank (ES; `maximum_consent_validity` 180 days): the owner authorized at the bank in the system browser, accounts were linked and a manual sync completed. Real data lives in the standard app data dir (`%APPDATA%\dev.pocketledger.app`), encrypted; the run log contains no tokens, session ids or IBANs.
+
 ## Still unverified
 
 - **Is the authorization `code` bound to the application JWT?** (ADR 0004.) Testing it needs a second sandbox application; the owner has only one. The `code` keeps being treated as a secret (state check, never logged, single-use listener).
