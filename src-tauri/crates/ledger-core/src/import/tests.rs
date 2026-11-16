@@ -699,6 +699,42 @@ fn check_openbank_rows(parsed: &ParsedImport) {
 }
 
 #[test]
+fn preamble_iban_becomes_the_account_identity() {
+    let doc = xhtml(
+        "UTF-8",
+        &format!("<table>{PREAMBLE_ROWS}{XHTML_HEADER_ROW}{DATA_ROWS}</table>"),
+    );
+    let parsed = parse_file(doc.as_bytes(), "movimientos.xls", &openbank_excel()).expect("parse");
+    let identity = parsed.account_identity.expect("identity");
+    assert_eq!(identity, crate::identity::AccountIdentity::from_iban("ES0000000000000000000000").unwrap());
+    assert_eq!(identity.suffix.as_deref(), Some("0000"));
+
+    // Same in the .xlsx layout.
+    let xlsx = build_xlsx();
+    let parsed = parse_file(&xlsx.bytes, "m.xlsx", &openbank_excel()).expect("parse");
+    assert_eq!(parsed.account_identity, Some(identity));
+}
+
+#[test]
+fn ambiguous_or_missing_preamble_iban_gives_no_identity() {
+    let two = PREAMBLE_ROWS.replace(
+        "<tr><td>Titular</td>",
+        "<tr><td>Otra</td><td>ES00 0000 0000 0000 0000 0009</td></tr><tr><td>Titular</td>",
+    );
+    let doc = xhtml("UTF-8", &format!("<table>{two}{XHTML_HEADER_ROW}{DATA_ROWS}</table>"));
+    let parsed = parse_file(doc.as_bytes(), "m.xls", &openbank_excel()).expect("parse");
+    assert_eq!(parsed.account_identity, None);
+
+    // An IBAN in a data row (e.g. a transfer concept) is not the account's.
+    let data = DATA_ROWS.replace("ALQUILER", "ES00 0000 0000 0000 0000 0009");
+    let doc = xhtml("UTF-8", &format!("<table>{XHTML_HEADER_ROW}{data}</table>"));
+    let parsed = parse_file(doc.as_bytes(), "m.xls", &openbank_excel()).expect("parse");
+    assert_eq!(parsed.account_identity, None);
+
+    assert_eq!(parse_file(FIXTURE_ES, "e.csv", &generic_csv_es()).expect("csv").account_identity, None);
+}
+
+#[test]
 fn xhtml_xls_single_table_is_read_by_the_html_reader() {
     let doc = xhtml(
         "UTF-8",

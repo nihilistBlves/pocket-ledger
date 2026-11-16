@@ -8,6 +8,7 @@ use super::dates;
 use super::profile::{AmountColumns, ColumnRef, ImportProfile};
 use super::readers::{Cell, RawRow};
 use super::{AmountProblem, ImportError, ParsedImport, RowError, RowErrorKind};
+use crate::identity::{iban_in_cell, AccountIdentity};
 use crate::model::{NewTransaction, TxStatus};
 use crate::money::{self, MoneyError};
 
@@ -279,17 +280,33 @@ fn convert_row(
     })
 }
 
+/// The account identity named in the preamble: the only distinct IBAN-shaped cell
+/// before the data. None if there is no IBAN or more than one (ambiguous: never guess).
+fn preamble_identity(preamble: &[RawRow]) -> Option<AccountIdentity> {
+    let mut found: Option<String> = None;
+    for iban in preamble.iter().flat_map(|r| r.cells.iter()).filter_map(|c| iban_in_cell(c.text())) {
+        match &found {
+            None => found = Some(iban),
+            Some(prev) if *prev == iban => {}
+            Some(_) => return None,
+        }
+    }
+    found.and_then(|iban| AccountIdentity::from_iban(&iban))
+}
+
 /// Converts a whole table. `file_sha256` is filled in by the caller.
 pub fn convert(rows: &[RawRow], profile: &ImportProfile) -> Result<ParsedImport, ImportError> {
-    let (header, data_start): (Vec<String>, usize) = if profile.has_header {
+    // `preamble_end`: rows before it are title/preamble rows, never data.
+    let (header, preamble_end, data_start): (Vec<String>, usize, usize) = if profile.has_header {
         let header_index = match profile.skip_rows {
             Some(n) => n,
             None => detect_header(rows, profile)?,
         };
         let header_row = rows.get(header_index).ok_or(ImportError::HeaderNotFound)?;
-        (folded_header(header_row), header_index + 1)
+        (folded_header(header_row), header_index, header_index + 1)
     } else {
-        (Vec::new(), profile.skip_rows.unwrap_or(0))
+        let skip = profile.skip_rows.unwrap_or(0);
+        (Vec::new(), skip, skip)
     };
 
     let cols = resolve_all(profile, &header)?;
@@ -298,6 +315,7 @@ pub fn convert(rows: &[RawRow], profile: &ImportProfile) -> Result<ParsedImport,
         rows: Vec::new(),
         errors: Vec::new(),
         file_sha256: String::new(),
+        account_identity: preamble_identity(&rows[..preamble_end.min(rows.len())]),
     };
     for row in rows.iter().skip(data_start) {
         if row.is_blank() {
