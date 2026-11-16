@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "dev.pocketledger.app",
   "build": {
-    "beforeDevCommand": "pnpm start",
-    "devUrl": "http://localhost:4200",
+    "beforeDevCommand": "pnpm start --host 127.0.0.1",
+    "devUrl": "http://127.0.0.1:4200",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist/pocket-ledger/browser"
   },

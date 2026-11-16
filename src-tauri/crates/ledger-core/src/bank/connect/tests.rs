@@ -147,7 +147,9 @@ async fn shorter_bank_limit_wins_over_the_cap() {
     let before = Utc::now();
     authorize(&f.client, params(port), open).await.unwrap();
     let secs = offered_validity_secs(&captured, before);
-    assert!((90 * 86_400 - 5..=90 * 86_400 + 120).contains(&secs), "{secs}");
+    // The bank's limit minus the clock-skew margin, so valid_until never exceeds it.
+    let expected = 90 * 86_400 - i64::try_from(CONSENT_MARGIN_SECS).unwrap();
+    assert!((expected - 5..=expected + 120).contains(&secs), "{secs}");
 }
 
 #[tokio::test]
