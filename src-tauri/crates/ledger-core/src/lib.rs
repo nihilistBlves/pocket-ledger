@@ -4,6 +4,7 @@
 //! - [`bank`]: open-banking client (Enable Banking).
 //! - [`money`]: exact parsing/formatting of amounts as signed integer cents.
 //! - [`db`]: encrypted SQLite (SQLCipher) access, schema and migrations.
+//! - [`backup`]: encrypted backup/restore and startup recovery (ADR 0005).
 //! - [`keystore`]: where secrets (the database key) are kept.
 //! - [`model`]: source-independent transaction shape for the ingest pipeline.
 //! - [`import`]: CSV/Excel file import driven by saved profiles.
@@ -14,6 +15,7 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::float_arithmetic)]
 
+pub mod backup;
 pub mod bank;
 pub mod db;
 pub mod dedup;

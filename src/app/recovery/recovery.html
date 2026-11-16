@@ -1,0 +1,107 @@
+<svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-alert" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 11.1v.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+</svg>
+
+<main class="recovery">
+  <p class="brand">{{ appName }}</p>
+  <header class="page-head">
+    <h1>{{ t.title }}</h1>
+  </header>
+
+  <section class="card intro" aria-labelledby="rec-reason">
+    <p class="body" id="rec-reason" data-test="reason">{{ reasonText() }}</p>
+    <p class="body">{{ t.needBackup }}</p>
+  </section>
+
+  @if (error(); as err) {
+    <div class="banner is-error" role="alert">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+      <div class="banner-body">{{ err.message }} <span class="muted">{{ t.restartHint }}</span></div>
+      <button type="button" class="btn-icon" [attr.aria-label]="t.dismiss" (click)="dismissError()">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x" /></svg>
+      </button>
+    </div>
+  }
+
+  <div class="options">
+    <section class="card option" aria-labelledby="rec-unlock">
+      <div class="option-head">
+        <h2 class="title-sm" id="rec-unlock">{{ t.unlockTitle }}</h2>
+        <span class="badge badge-honey">{{ t.recommended }}</span>
+      </div>
+      <p class="body">{{ t.unlockBody }}</p>
+      @if (choice() === 'unlock' && pickedName(); as name) {
+        <form class="form" (submit)="$event.preventDefault(); run('unlock')" autocomplete="off">
+          <p class="picked">{{ t.picked(name) }}</p>
+          <div class="field">
+            <label class="field-label" for="rec-pass-unlock">{{ t.passphrase }}</label>
+            <input
+              id="rec-pass-unlock"
+              class="input"
+              type="password"
+              autocomplete="current-password"
+              [value]="passphrase()"
+              [disabled]="busy()"
+              (input)="onPassphrase($any($event.target).value)"
+            />
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary" [disabled]="!canRun('unlock')">{{ t.unlock }}</button>
+            <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="pick('unlock')">
+              {{ t.pickAnother }}
+            </button>
+            @if (busy()) {
+              <span class="muted" role="status">{{ t.unlocking }}</span>
+            }
+          </div>
+        </form>
+      } @else {
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="pick('unlock')">
+            {{ t.pick }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <section class="card option" aria-labelledby="rec-restore">
+      <div class="option-head">
+        <h2 class="title-sm" id="rec-restore">{{ t.restoreTitle }}</h2>
+      </div>
+      <p class="body">{{ t.restoreBody }}</p>
+      @if (choice() === 'restore' && pickedName(); as name) {
+        <form class="form" (submit)="$event.preventDefault(); run('restore')" autocomplete="off">
+          <p class="picked">{{ t.picked(name) }}</p>
+          <div class="field">
+            <label class="field-label" for="rec-pass-restore">{{ t.passphrase }}</label>
+            <input
+              id="rec-pass-restore"
+              class="input"
+              type="password"
+              autocomplete="current-password"
+              [value]="passphrase()"
+              [disabled]="busy()"
+              (input)="onPassphrase($any($event.target).value)"
+            />
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-secondary" [disabled]="!canRun('restore')">{{ t.restore }}</button>
+            <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="pick('restore')">
+              {{ t.pickAnother }}
+            </button>
+            @if (busy()) {
+              <span class="muted" role="status">{{ t.restoring }}</span>
+            }
+          </div>
+        </form>
+      } @else {
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="pick('restore')">
+            {{ t.pick }}
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+</main>

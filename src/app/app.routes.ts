@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Accounts } from './bank/accounts';
+import { Backups } from './settings/backups';
 import { Placeholder } from './shell/placeholder';
 
 export const routes: Routes = [
@@ -7,5 +8,6 @@ export const routes: Routes = [
   { path: 'resumen', component: Placeholder },
   { path: 'movimientos', component: Placeholder },
   { path: 'cuentas', component: Accounts },
+  { path: 'ajustes', component: Backups },
   { path: '**', redirectTo: 'resumen' },
 ];

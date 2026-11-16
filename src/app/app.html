@@ -1,29 +1,33 @@
-<div class="app">
-  <aside class="sidebar">
-    <p class="brand">{{ t.appName }}</p>
-    <nav [attr.aria-label]="t.shell.mainNavLabel">
-      <ul>
-        @for (item of navItems; track item.path) {
-          <li>
-            <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
-          </li>
-        }
-      </ul>
-    </nav>
-  </aside>
-  <main class="main">
-    <section class="card" aria-labelledby="app-info-title">
-      <h2 id="app-info-title" class="caption">{{ t.shell.appInfoTitle }}</h2>
-      <p class="app-info">
-        @if (info(); as i) {
-          {{ i.name }} · {{ t.shell.version }} <span class="num">{{ i.version }}</span>
-        } @else if (infoError()) {
-          <span class="muted">{{ t.shell.appInfoUnavailable }}</span>
-        } @else {
-          <span class="muted">{{ t.shell.appInfoLoading }}</span>
-        }
-      </p>
-    </section>
-    <router-outlet />
-  </main>
-</div>
+@if (appMode.state() === 'recovery') {
+  <app-recovery />
+} @else if (appMode.state() === 'ready') {
+  <div class="app">
+    <aside class="sidebar">
+      <p class="brand">{{ t.appName }}</p>
+      <nav [attr.aria-label]="t.shell.mainNavLabel">
+        <ul>
+          @for (item of navItems; track item.path) {
+            <li>
+              <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+            </li>
+          }
+        </ul>
+      </nav>
+    </aside>
+    <main class="main">
+      <section class="card" aria-labelledby="app-info-title">
+        <h2 id="app-info-title" class="caption">{{ t.shell.appInfoTitle }}</h2>
+        <p class="app-info">
+          @if (info(); as i) {
+            {{ i.name }} · {{ t.shell.version }} <span class="num">{{ i.version }}</span>
+          } @else if (infoError()) {
+            <span class="muted">{{ t.shell.appInfoUnavailable }}</span>
+          } @else {
+            <span class="muted">{{ t.shell.appInfoLoading }}</span>
+          }
+        </p>
+      </section>
+      <router-outlet />
+    </main>
+  </div>
+}

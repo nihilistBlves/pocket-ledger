@@ -5,6 +5,8 @@ import { BankBusy, BankOverview, CommandError } from './bank.models';
 
 /** Emitted by the Rust side after a sync run touched the database. */
 export const SYNCED_EVENT = 'bank://synced';
+/** Emitted after a backup restore replaced the database. */
+export const REPLACED_EVENT = 'data://replaced';
 
 export function toCommandError(e: unknown): CommandError {
   if (typeof e === 'object' && e !== null) {
@@ -33,7 +35,12 @@ export class BankService {
     if (this.started) return;
     this.started = true;
     try {
-      this.unlisten = await this.listen(SYNCED_EVENT, () => void this.refresh());
+      const offSynced = await this.listen(SYNCED_EVENT, () => void this.refresh());
+      const offReplaced = await this.listen(REPLACED_EVENT, () => void this.refresh());
+      this.unlisten = () => {
+        offSynced();
+        offReplaced();
+      };
     } catch {
       // Outside the desktop shell there are no events.
     }

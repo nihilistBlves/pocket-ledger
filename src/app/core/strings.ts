@@ -5,6 +5,7 @@ export const STRINGS = {
     summary: 'Resumen',
     transactions: 'Movimientos',
     accounts: 'Cuentas',
+    settings: 'Ajustes',
   },
   shell: {
     mainNavLabel: 'Navegación principal',
@@ -100,5 +101,74 @@ export const STRINGS = {
       aborted: 'La ejecución se interrumpió antes de terminar.',
       generic: (code: string) => `La sincronización falló (código ${code}).`,
     },
+  },
+  settings: {
+    title: 'Ajustes',
+    backups: {
+      title: 'Copias de seguridad',
+      intro:
+        'Una copia cifrada guarda tus datos y la clave de la base de datos. Te permite recuperarlos si pierdes el equipo o la clave guardada en Windows.',
+      lastBackup: (date: string) => `Última copia: ${date}`,
+      lastBackupFile: (name: string) => `Archivo: ${name}`,
+      never: 'Aún no has hecho ninguna copia',
+      reminder: 'Hace más de 7 días que no haces una copia de seguridad. Crea una nueva.',
+      createTitle: 'Crear una copia',
+      passphrase: 'Frase de paso',
+      confirmation: 'Repite la frase de paso',
+      hint: 'Usa al menos 12 caracteres; lo más fácil son 4 o 5 palabras al azar.',
+      strengthLabel: 'Fortaleza de la frase de paso',
+      strength: ['Muy débil', 'Débil', 'Mejorable', 'Buena', 'Muy buena'],
+      mismatch: 'Las dos frases de paso no coinciden.',
+      warning:
+        'Si olvidas la frase de paso, la copia no se podrá recuperar. Nadie puede restablecerla.',
+      create: 'Crear copia',
+      creating: 'Cifrando… puede tardar unos segundos',
+      created: (name: string) => `Copia creada y verificada: ${name}`,
+      restoreTitle: 'Restaurar una copia',
+      restoreIntro:
+        'Sustituye los datos actuales por los de una copia. Se conserva una copia de la base de datos actual.',
+      pick: 'Restaurar una copia…',
+      pickAnother: 'Elegir otro archivo',
+      picked: (name: string) => `Archivo elegido: ${name}`,
+      restorePassphrase: 'Frase de paso de la copia',
+      restore: 'Restaurar',
+      restoring: 'Descifrando y restaurando… puede tardar unos segundos',
+      confirmTitle: '¿Reemplazar los datos actuales?',
+      confirmBody:
+        'Se sustituirán todos los datos actuales por los de la copia. Se conserva una copia de la base de datos actual en la carpeta de datos de la aplicación.',
+      confirmBank: 'Solo tendrás que volver a conectar el banco si restauras en otro equipo.',
+      confirmYes: 'Sí, reemplazar',
+      cancel: 'Cancelar',
+      restored: (date: string) => `Copia restaurada (creada el ${date}).`,
+      keptCopy: (name: string) => `Se conserva la base de datos anterior como ${name}.`,
+      dismiss: 'Cerrar aviso',
+    },
+  },
+  recovery: {
+    title: 'Modo de recuperación',
+    keyMissing:
+      'La aplicación no encuentra la clave de tu base de datos en Windows. No se ha borrado nada: tus datos siguen en el equipo, cifrados.',
+    keyMalformed:
+      'La clave guardada en Windows no tiene un formato válido. No se ha borrado nada: tus datos siguen en el equipo, cifrados.',
+    keyWrong:
+      'La clave guardada en Windows no abre la base de datos. No se ha borrado nada: tus datos siguen en el equipo, cifrados.',
+    needBackup: 'Para continuar necesitas una copia de seguridad y su frase de paso.',
+    unlockTitle: 'Desbloquear con una copia',
+    recommended: 'Recomendado',
+    unlockBody:
+      'Usa la clave guardada dentro de la copia para abrir la base de datos actual. Conservas todos tus datos, también los posteriores a la copia.',
+    unlock: 'Desbloquear',
+    unlocking: 'Descifrando y desbloqueando… puede tardar unos segundos',
+    restoreTitle: 'Restaurar una copia',
+    restoreBody:
+      'Sustituye los datos actuales por los de la copia. Se pierden los cambios posteriores a la copia; el archivo ilegible no se borra, se guarda aparte.',
+    restore: 'Restaurar',
+    restoring: 'Descifrando y restaurando… puede tardar unos segundos',
+    pick: 'Elegir archivo de copia…',
+    pickAnother: 'Elegir otro archivo',
+    picked: (name: string) => `Archivo elegido: ${name}`,
+    passphrase: 'Frase de paso de la copia',
+    dismiss: 'Cerrar aviso',
+    restartHint: 'Si el error persiste, cierra y vuelve a abrir la aplicación.',
   },
 } as const;
