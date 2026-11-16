@@ -88,6 +88,9 @@ describe('Recovery mode', () => {
     expect(Array.from(el.querySelectorAll('nav a')).map((a) => a.textContent?.trim())).toEqual([
       'Resumen',
       'Movimientos',
+      'Categorías',
+      'Reglas',
+      'Presupuestos',
       'Cuentas',
       'Ajustes',
     ]);
