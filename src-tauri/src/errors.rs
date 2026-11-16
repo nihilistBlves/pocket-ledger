@@ -2,6 +2,7 @@
 //! Spanish message. Underlying errors are mapped by variant only, never by their
 //! `Display` text, so paths, URLs, identifiers or response content can not reach the UI.
 
+use ledger_core::backup::BackupError;
 use ledger_core::bank::connect::{AuthError, ConnectError};
 use ledger_core::bank::enable_banking::EbError;
 use ledger_core::bank::sync::{SyncBlocked, SyncError};
@@ -26,11 +27,22 @@ pub enum ErrorCode {
     NotFound,
     Conflict,
     Internal,
+    RecoveryMode,
+    PassphraseMismatch,
+    WeakPassphrase,
+    WrongPassphrase,
+    NotABackup,
+    UnsupportedBackup,
+    NoBackupSelected,
+    BackupKeyMismatch,
+    RestoreRolledBack,
+    RestoreFailed,
+    BackupIo,
 }
 
 impl ErrorCode {
     #[cfg(test)]
-    pub const ALL: [ErrorCode; 16] = [
+    pub const ALL: [ErrorCode; 27] = [
         ErrorCode::NotConfigured,
         ErrorCode::KeyMissing,
         ErrorCode::PortInUse,
@@ -47,6 +59,17 @@ impl ErrorCode {
         ErrorCode::NotFound,
         ErrorCode::Conflict,
         ErrorCode::Internal,
+        ErrorCode::RecoveryMode,
+        ErrorCode::PassphraseMismatch,
+        ErrorCode::WeakPassphrase,
+        ErrorCode::WrongPassphrase,
+        ErrorCode::NotABackup,
+        ErrorCode::UnsupportedBackup,
+        ErrorCode::NoBackupSelected,
+        ErrorCode::BackupKeyMismatch,
+        ErrorCode::RestoreRolledBack,
+        ErrorCode::RestoreFailed,
+        ErrorCode::BackupIo,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -67,6 +90,17 @@ impl ErrorCode {
             ErrorCode::NotFound => "not_found",
             ErrorCode::Conflict => "conflict",
             ErrorCode::Internal => "internal",
+            ErrorCode::RecoveryMode => "recovery_mode",
+            ErrorCode::PassphraseMismatch => "passphrase_mismatch",
+            ErrorCode::WeakPassphrase => "weak_passphrase",
+            ErrorCode::WrongPassphrase => "wrong_passphrase",
+            ErrorCode::NotABackup => "not_a_backup",
+            ErrorCode::UnsupportedBackup => "unsupported_backup",
+            ErrorCode::NoBackupSelected => "no_backup_selected",
+            ErrorCode::BackupKeyMismatch => "backup_key_mismatch",
+            ErrorCode::RestoreRolledBack => "restore_rolled_back",
+            ErrorCode::RestoreFailed => "restore_failed",
+            ErrorCode::BackupIo => "backup_io",
         }
     }
 
@@ -106,6 +140,31 @@ impl ErrorCode {
             ErrorCode::NotFound => "El movimiento o la categoría ya no existe.",
             ErrorCode::Conflict => "La operación entra en conflicto con datos existentes.",
             ErrorCode::Internal => "Error interno de la aplicación. Inténtalo de nuevo.",
+            ErrorCode::RecoveryMode => {
+                "La aplicación está en modo de recuperación. Restaura o usa una copia de seguridad para continuar."
+            }
+            ErrorCode::PassphraseMismatch => "Las dos frases de paso no coinciden.",
+            ErrorCode::WeakPassphrase => {
+                "La frase de paso es demasiado débil. Usa al menos 12 caracteres, por ejemplo 4 o 5 palabras al azar."
+            }
+            ErrorCode::WrongPassphrase => {
+                "La frase de paso no es correcta o el archivo está dañado."
+            }
+            ErrorCode::NotABackup => "El archivo no es una copia de seguridad de Pocket Ledger.",
+            ErrorCode::UnsupportedBackup => {
+                "La copia usa un formato desconocido o fue creada con una versión más nueva de la aplicación."
+            }
+            ErrorCode::NoBackupSelected => "Primero elige el archivo de la copia.",
+            ErrorCode::BackupKeyMismatch => {
+                "La clave de esta copia no abre la base de datos actual. Usa «Restaurar una copia» en su lugar."
+            }
+            ErrorCode::RestoreRolledBack => {
+                "No se pudo completar la restauración; tus datos actuales siguen intactos."
+            }
+            ErrorCode::RestoreFailed => {
+                "La restauración falló y no se pudo recuperar la base de datos anterior. Cierra y vuelve a abrir la aplicación; en la carpeta de datos se conserva una copia llamada pocket-ledger.db.pre-restore-… con tus datos anteriores."
+            }
+            ErrorCode::BackupIo => "No se pudo leer o escribir el archivo de la copia.",
         }
     }
 }
@@ -125,6 +184,25 @@ impl CommandError {
 impl From<ErrorCode> for CommandError {
     fn from(code: ErrorCode) -> Self {
         Self::new(code)
+    }
+}
+
+/// Maps by variant only: no path, key or passphrase can reach the UI.
+pub fn code_of_backup(e: &BackupError) -> ErrorCode {
+    match e {
+        BackupError::NotABackup | BackupError::InvalidHeader | BackupError::TooLarge => {
+            ErrorCode::NotABackup
+        }
+        BackupError::UnsupportedVersion(_) | BackupError::NewerSchema => {
+            ErrorCode::UnsupportedBackup
+        }
+        BackupError::WrongPassphraseOrCorrupt => ErrorCode::WrongPassphrase,
+        BackupError::WeakPassphrase => ErrorCode::WeakPassphrase,
+        BackupError::BackupKeyDoesNotOpenDatabase => ErrorCode::BackupKeyMismatch,
+        BackupError::RestoreRolledBack => ErrorCode::RestoreRolledBack,
+        BackupError::RestoreFailedAndRollbackFailed => ErrorCode::RestoreFailed,
+        BackupError::IntegrityCheckFailed | BackupError::Io(_) => ErrorCode::BackupIo,
+        BackupError::Db(_) | BackupError::Keystore(_) | BackupError::Random => ErrorCode::Internal,
     }
 }
 
@@ -161,6 +239,12 @@ pub fn code_of_sync(e: &SyncError) -> ErrorCode {
         SyncError::RateLimited => ErrorCode::RateLimited,
         SyncError::Bank { .. } => ErrorCode::BankError,
         SyncError::Db(_) | SyncError::Store(_) | SyncError::Poisoned => ErrorCode::Internal,
+    }
+}
+
+impl From<BackupError> for CommandError {
+    fn from(e: BackupError) -> Self {
+        Self::new(code_of_backup(&e))
     }
 }
 
@@ -227,6 +311,37 @@ mod tests {
         }
         assert!(ErrorCode::KeyMissing.message().contains(KEY_PATH_ENV));
         assert!(ErrorCode::NotConfigured.message().contains("enable-banking.json"));
+    }
+
+    #[test]
+    fn backup_errors_map_by_variant() {
+        use ledger_core::db::DbError;
+        use ledger_core::keystore::KeystoreError;
+        let cases: Vec<(BackupError, ErrorCode)> = vec![
+            (BackupError::NotABackup, ErrorCode::NotABackup),
+            (BackupError::InvalidHeader, ErrorCode::NotABackup),
+            (BackupError::TooLarge, ErrorCode::NotABackup),
+            (BackupError::UnsupportedVersion(9), ErrorCode::UnsupportedBackup),
+            (BackupError::NewerSchema, ErrorCode::UnsupportedBackup),
+            (BackupError::WrongPassphraseOrCorrupt, ErrorCode::WrongPassphrase),
+            (BackupError::WeakPassphrase, ErrorCode::WeakPassphrase),
+            (BackupError::BackupKeyDoesNotOpenDatabase, ErrorCode::BackupKeyMismatch),
+            (BackupError::RestoreRolledBack, ErrorCode::RestoreRolledBack),
+            (BackupError::RestoreFailedAndRollbackFailed, ErrorCode::RestoreFailed),
+            (BackupError::IntegrityCheckFailed, ErrorCode::BackupIo),
+            (BackupError::Io(std::io::ErrorKind::NotFound), ErrorCode::BackupIo),
+            (BackupError::Db(DbError::WrongKeyOrCorrupt), ErrorCode::Internal),
+            (BackupError::Keystore(KeystoreError::Poisoned), ErrorCode::Internal),
+            (BackupError::Random, ErrorCode::Internal),
+        ];
+        for (err, code) in cases {
+            assert_eq!(code_of_backup(&err), code, "{err:?}");
+        }
+        assert_eq!(
+            ErrorCode::WrongPassphrase.message(),
+            "La frase de paso no es correcta o el archivo está dañado."
+        );
+        assert!(ErrorCode::RestoreFailed.message().contains("pocket-ledger.db.pre-restore-"));
     }
 
     #[test]

@@ -1,3 +1,4 @@
+mod backup_commands;
 mod bank_commands;
 mod bank_config;
 mod errors;
@@ -50,6 +51,9 @@ pub fn run() {
     tauri::Builder::default()
         // Used from Rust only, to open the bank authorization URL in the system browser.
         .plugin(tauri_plugin_opener::init())
+        // Used from Rust only (backup Save/Open dialogs). No dialog permission is granted
+        // to the WebView in capabilities/.
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir_override = data_dir_override();
             // Registered first so later setup errors are logged too.
@@ -70,6 +74,14 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            backup_commands::app_mode,
+            backup_commands::backup_status,
+            backup_commands::backup_check_passphrase,
+            backup_commands::backup_create,
+            backup_commands::backup_pick_file,
+            backup_commands::backup_restore,
+            backup_commands::recovery_unlock,
+            backup_commands::recovery_restore,
             bank_commands::bank_overview,
             bank_commands::bank_connect,
             bank_commands::bank_sync_now,

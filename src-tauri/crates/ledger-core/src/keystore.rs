@@ -118,6 +118,14 @@ impl MemoryStore {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Names of all stored entries (never values), sorted. Handy in tests.
+    pub fn entry_names(&self) -> Vec<String> {
+        let items = self.items.lock().expect("memory store lock");
+        let mut names: Vec<String> = items.keys().cloned().collect();
+        names.sort();
+        names
+    }
 }
 
 impl SecretStore for MemoryStore {

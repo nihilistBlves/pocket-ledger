@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Accounts } from './bank/accounts';
+import { Backups } from './settings/backups';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'resumen' },
@@ -18,5 +19,6 @@ export const routes: Routes = [
     loadComponent: () => import('./budgets/budgets').then((m) => m.Budgets),
   },
   { path: 'cuentas', component: Accounts },
+  { path: 'ajustes', component: Backups },
   { path: '**', redirectTo: 'resumen' },
 ];

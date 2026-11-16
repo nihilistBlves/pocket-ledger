@@ -95,6 +95,7 @@ pub fn build_overview(
 }
 
 fn lock(state: &AppState) -> Result<std::sync::MutexGuard<'_, Connection>, CommandError> {
+    state.require_ready()?;
     state.db.lock().map_err(|_| CommandError::new(ErrorCode::Internal))
 }
 
@@ -252,6 +253,17 @@ mod tests {
             [],
         )
         .unwrap();
+    }
+
+    #[test]
+    fn bank_database_access_is_refused_in_recovery_mode() {
+        use crate::state::AppMode;
+        use ledger_core::backup::RecoveryReason;
+        let state = AppState::new(db(), Box::new(MemoryStore::new()), std::path::PathBuf::new());
+        assert!(lock(&state).is_ok());
+        *state.mode.write().unwrap() = AppMode::Recovery(RecoveryReason::KeyWrong);
+        assert_eq!(lock(&state).unwrap_err().code, "recovery_mode");
+        assert_eq!(state.try_busy().unwrap_err().code, "recovery_mode");
     }
 
     #[test]
