@@ -4,6 +4,7 @@ mod errors;
 mod scheduler;
 mod state;
 
+use ledger_core::keystore;
 use serde::Serialize;
 use tauri::Manager;
 
@@ -29,6 +30,9 @@ fn app_info() -> AppInfo {
 /// Debug builds only: `POCKET_LEDGER_DATA_DIR` keeps the database and config of a
 /// development run inside the project (e.g. its ignored `tmp/`) instead of the
 /// user's app data directory. Release builds always use the app data directory.
+/// When it is active the OS keyring entries also move to a separate service
+/// (`keystore::DEV_SERVICE`), so a development run never reads the production
+/// database key or overwrites the production bank session.
 fn data_dir_override() -> Option<std::path::PathBuf> {
     if cfg!(debug_assertions) {
         std::env::var_os("POCKET_LEDGER_DATA_DIR")
@@ -44,8 +48,11 @@ pub fn run() {
         // Used from Rust only, to open the bank authorization URL in the system browser.
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let data_dir = data_dir_override().map_or_else(|| app.path().app_data_dir(), Ok)?;
-            let state = state::AppState::init(&data_dir).map_err(|e| e.to_string())?;
+            let data_dir_override = data_dir_override();
+            let keyring_service = keystore::service_for(data_dir_override.is_some());
+            let data_dir = data_dir_override.map_or_else(|| app.path().app_data_dir(), Ok)?;
+            let state =
+                state::AppState::init(&data_dir, keyring_service).map_err(|e| e.to_string())?;
             app.manage(state);
             scheduler::spawn(app.handle().clone());
             Ok(())

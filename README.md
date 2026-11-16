@@ -20,3 +20,5 @@ pnpm ng test --watch=false    # frontend unit tests
 cargo test --manifest-path src-tauri/Cargo.toml --workspace   # Rust tests
 pnpm tauri build --no-bundle  # release build of the desktop binary
 ```
+
+Debug builds only: set `POCKET_LEDGER_DATA_DIR` to keep a development run's database and config in another folder (e.g. the project's ignored `tmp/`). While it is set, secrets go to the OS keyring service `pocket-ledger-dev` instead of `pocket-ledger`, so the run never reads the production database key or touches the production bank session. Release builds ignore the variable. See [docs/decisions/dev-keyring-isolation.md](docs/decisions/dev-keyring-isolation.md).
