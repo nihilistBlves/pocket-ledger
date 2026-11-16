@@ -8,6 +8,7 @@
 //! - [`keystore`]: where secrets (the database key) are kept.
 //! - [`model`]: source-independent transaction shape for the ingest pipeline.
 //! - [`import`]: CSV/Excel file import driven by saved profiles.
+//! - [`redact`]: masks IBANs, tokens and ids in log lines (ADR 0003 safety net).
 //! - [`normalize`], [`dedup`], [`transfers`], [`rules`], [`ingest`]: the ingest pipeline.
 //!
 //! Money is never a floating point number anywhere in this crate.
@@ -25,6 +26,7 @@ pub mod keystore;
 pub mod model;
 pub mod money;
 pub mod normalize;
+pub mod redact;
 pub mod rules;
 pub mod transfers;
 
