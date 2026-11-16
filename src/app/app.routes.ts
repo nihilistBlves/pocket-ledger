@@ -19,6 +19,7 @@ export const routes: Routes = [
     loadComponent: () => import('./budgets/budgets').then((m) => m.Budgets),
   },
   { path: 'cuentas', component: Accounts },
+  { path: 'importar', loadComponent: () => import('./import/import').then((m) => m.ImportScreen) },
   { path: 'ajustes', component: Backups },
   { path: '**', redirectTo: 'resumen' },
 ];

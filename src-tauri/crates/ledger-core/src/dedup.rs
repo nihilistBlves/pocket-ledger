@@ -375,10 +375,12 @@ pub fn apply(
                 "UPDATE transactions SET entry_reference = ?1 WHERE id = ?2 AND entry_reference IS NULL",
                 params![tx.entry_reference, id],
             )?;
+            mark_touched_by_sync(conn, id, provenance)?;
             Ok(id)
         }
         DedupOutcome::Update(id) | DedupOutcome::Promote(id) => {
             rewrite_row(conn, account_id, id, tx, decision)?;
+            mark_touched_by_sync(conn, id, provenance)?;
             Ok(id)
         }
         DedupOutcome::Insert => {
@@ -416,6 +418,20 @@ pub fn apply(
             Ok(conn.last_insert_rowid())
         }
     }
+}
+
+/// When bank sync adopts or rewrites a row that came from a file import, the row gets
+/// the sync run id. Undoing an import batch refuses batches holding such rows, since
+/// the bank now owns them. Rows inserted by the sync itself already carry the run id.
+fn mark_touched_by_sync(conn: &Connection, id: i64, provenance: &Provenance) -> Result<()> {
+    if let Some(run) = provenance.sync_run_id {
+        conn.execute(
+            "UPDATE transactions SET sync_run_id = ?1
+             WHERE id = ?2 AND source = 'import' AND sync_run_id IS NULL",
+            params![run, id],
+        )?;
+    }
+    Ok(())
 }
 
 /// Overwrites the bank-provided fields of a stored row with the incoming ones.

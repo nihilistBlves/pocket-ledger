@@ -92,6 +92,7 @@ describe('Recovery mode', () => {
       'Reglas',
       'Presupuestos',
       'Cuentas',
+      'Importar',
       'Ajustes',
     ]);
   });

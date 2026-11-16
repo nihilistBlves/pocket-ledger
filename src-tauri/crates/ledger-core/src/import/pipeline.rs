@@ -11,10 +11,11 @@
 //! refused instead of creating a second copy of the same bank account.
 
 use rusqlite::{params, Connection, OptionalExtension};
+use serde::Serialize;
 
 use super::{parse_file, ImportError, ImportProfile, RowError};
 use crate::identity::AccountIdentity;
-use crate::ingest::{ingest, IngestOrigin, IngestReport};
+use crate::ingest::{ingest_in, IngestOrigin, IngestReport};
 use crate::model::TxSource;
 
 /// Result of importing one file into one account.
@@ -27,6 +28,59 @@ pub struct ImportOutcome {
     pub report: IngestReport,
 }
 
+/// How the file's account identity relates to the chosen target account.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case", rename_all_fields = "camelCase")]
+pub enum IdentityCheck {
+    /// The file names no account (no IBAN in its preamble): nothing to compare.
+    NoIdentity,
+    /// The target account has the file's identity.
+    Match,
+    /// The target has no identity yet and would adopt the file's on import.
+    WillAdopt,
+    /// The target has a different identity.
+    Mismatch,
+    /// Another local account (e.g. one linked by bank sync) already has the file's identity.
+    BelongsToOther { existing_account_id: i64 },
+    /// The target account does not exist.
+    AccountNotFound,
+}
+
+/// Compares the file's identity with the target account. Reads only.
+pub(super) fn check_identity(
+    conn: &Connection,
+    account_id: i64,
+    identity: Option<&AccountIdentity>,
+) -> Result<IdentityCheck, ImportError> {
+    let current: Option<Option<String>> = conn
+        .query_row("SELECT identity_hash FROM accounts WHERE id = ?1", [account_id], |r| r.get(0))
+        .optional()?;
+    let Some(current) = current else {
+        return Ok(IdentityCheck::AccountNotFound);
+    };
+    let Some(identity) = identity else {
+        return Ok(IdentityCheck::NoIdentity);
+    };
+    match current {
+        Some(hash) if hash == identity.hash => Ok(IdentityCheck::Match),
+        Some(_) => Ok(IdentityCheck::Mismatch),
+        None => match account_with_identity(conn, &identity.hash)? {
+            Some(existing_account_id) => Ok(IdentityCheck::BelongsToOther { existing_account_id }),
+            None => Ok(IdentityCheck::WillAdopt),
+        },
+    }
+}
+
+/// The account whose `identity_hash` equals `hash`, if any.
+pub(super) fn account_with_identity(
+    conn: &Connection,
+    hash: &str,
+) -> Result<Option<i64>, ImportError> {
+    Ok(conn
+        .query_row("SELECT id FROM accounts WHERE identity_hash = ?1", [hash], |r| r.get(0))
+        .optional()?)
+}
+
 /// Checks the file's identity against the target account and, when the target has
 /// none yet, stores it there. Writes nothing on error.
 fn reconcile_identity(
@@ -34,24 +88,14 @@ fn reconcile_identity(
     account_id: i64,
     identity: &AccountIdentity,
 ) -> Result<(), ImportError> {
-    let current: Option<String> = conn
-        .query_row("SELECT identity_hash FROM accounts WHERE id = ?1", [account_id], |r| r.get(0))
-        .optional()?
-        .ok_or(ImportError::AccountNotFound)?;
-    match current {
-        Some(hash) if hash == identity.hash => Ok(()),
-        Some(_) => Err(ImportError::AccountMismatch),
-        None => {
-            let owner: Option<i64> = conn
-                .query_row(
-                    "SELECT id FROM accounts WHERE identity_hash = ?1",
-                    [&identity.hash],
-                    |r| r.get(0),
-                )
-                .optional()?;
-            if let Some(existing_account_id) = owner {
-                return Err(ImportError::AccountBelongsToOther { existing_account_id });
-            }
+    match check_identity(conn, account_id, Some(identity))? {
+        IdentityCheck::AccountNotFound => Err(ImportError::AccountNotFound),
+        IdentityCheck::Mismatch => Err(ImportError::AccountMismatch),
+        IdentityCheck::BelongsToOther { existing_account_id } => {
+            Err(ImportError::AccountBelongsToOther { existing_account_id })
+        }
+        IdentityCheck::Match | IdentityCheck::NoIdentity => Ok(()),
+        IdentityCheck::WillAdopt => {
             conn.execute(
                 "UPDATE accounts SET identity_hash = ?1, display_suffix = COALESCE(display_suffix, ?2)
                  WHERE id = ?3",
@@ -63,8 +107,12 @@ fn reconcile_identity(
 }
 
 /// Parses `bytes` with `profile` and ingests the rows into `account_id`.
-/// A file-level parse error or an account identity conflict (see the module docs)
-/// aborts before anything is written.
+/// A file-level parse error, a file without any valid row or an account identity
+/// conflict (see the module docs) aborts before anything is written.
+///
+/// The batch row and the ingest share one transaction, so a failure leaves no
+/// half-filled batch behind. The batch stores `rows_total` (valid rows plus rejected
+/// ones), `inserted`, `updated`, `duplicates` and `errors` (rejected rows).
 pub fn import_file(
     conn: &mut Connection,
     account_id: i64,
@@ -74,11 +122,17 @@ pub fn import_file(
     profile: &ImportProfile,
 ) -> Result<ImportOutcome, ImportError> {
     let parsed = parse_file(bytes, file_name, profile)?;
+    if parsed.rows.is_empty() {
+        return Err(ImportError::NothingToImport);
+    }
     if let Some(identity) = &parsed.account_identity {
         reconcile_identity(conn, account_id, identity)?;
+    } else if check_identity(conn, account_id, None)? == IdentityCheck::AccountNotFound {
+        return Err(ImportError::AccountNotFound);
     }
 
-    conn.execute(
+    let db_tx = conn.transaction()?;
+    db_tx.execute(
         "INSERT INTO import_batches (account_id, profile, file_name, file_sha256, rows_total, errors)
          VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
         params![
@@ -89,15 +143,17 @@ pub fn import_file(
             parsed.errors.len() as i64
         ],
     )?;
-    let batch_id = conn.last_insert_rowid();
+    let batch_id = db_tx.last_insert_rowid();
 
-    let report = ingest(
-        conn,
+    // `ingest_in` adds its own counts on top of the rejected rows stored above.
+    let report = ingest_in(
+        &db_tx,
         account_id,
         parsed.rows,
         TxSource::Import,
         IngestOrigin::ImportBatch(batch_id),
     )?;
+    db_tx.commit()?;
 
     Ok(ImportOutcome {
         batch_id,
@@ -110,6 +166,7 @@ pub fn import_file(
 mod tests {
     use super::*;
     use crate::import::{generic_csv_es, openbank_excel};
+    use crate::ingest::ingest;
     use crate::model::{NewTransaction, TxStatus};
     use crate::rules::{create_manual_rule, NewRule};
     use crate::test_support::*;

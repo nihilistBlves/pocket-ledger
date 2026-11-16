@@ -9,6 +9,7 @@
 use std::collections::HashSet;
 
 use rusqlite::{params, Connection, Result};
+use serde::Serialize;
 
 use crate::dedup::{apply, BatchDeduper, DedupOutcome, Provenance};
 use crate::model::{NewTransaction, TxSource, TxStatus};
@@ -30,8 +31,22 @@ pub struct RowError {
     pub reason: &'static str,
 }
 
+/// What happened to one valid input row (used by the import preview).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RowDisposition {
+    /// Stored as a new transaction.
+    New,
+    /// Already stored (identical row, or a twin that only received a reference).
+    Duplicate,
+    /// An existing row was rewritten (changed by the source, or a pending row booked).
+    Updated,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct IngestReport {
+    /// One entry per input row, in input order: `None` for rows rejected by validation.
+    pub dispositions: Vec<Option<RowDisposition>>,
     pub inserted: usize,
     /// Rows rewritten because the bank changed them (same entry_reference).
     pub updated: usize,
@@ -52,7 +67,7 @@ pub struct IngestReport {
     pub seen_ids: Vec<i64>,
 }
 
-/// Runs the whole pipeline for one batch of one account.
+/// Runs the whole pipeline for one batch of one account, in its own transaction.
 pub fn ingest(
     conn: &mut Connection,
     account_id: i64,
@@ -61,6 +76,20 @@ pub fn ingest(
     origin: IngestOrigin,
 ) -> Result<IngestReport> {
     let db_tx = conn.transaction()?;
+    let report = ingest_in(&db_tx, account_id, rows, source, origin)?;
+    db_tx.commit()?;
+    Ok(report)
+}
+
+/// The pipeline itself, inside a transaction (or savepoint) the caller owns. The
+/// caller decides whether to commit; the import preview rolls it back.
+pub fn ingest_in(
+    db_tx: &Connection,
+    account_id: i64,
+    rows: Vec<NewTransaction>,
+    source: TxSource,
+    origin: IngestOrigin,
+) -> Result<IngestReport> {
     let provenance = Provenance {
         source,
         import_batch_id: match origin {
@@ -79,10 +108,11 @@ pub fn ingest(
     for (index, mut row) in rows.iter().cloned().enumerate() {
         if let Err(reason) = validate(&mut row) {
             report.errors.push(RowError { row: index, reason });
+            report.dispositions.push(None);
             continue;
         }
-        let decision = deduper.decide(&db_tx, &row)?;
-        let id = apply(&db_tx, account_id, &row, &decision, &provenance)?;
+        let decision = deduper.decide(db_tx, &row)?;
+        let id = apply(db_tx, account_id, &row, &decision, &provenance)?;
         report.seen_ids.push(id);
         match decision.outcome {
             DedupOutcome::Insert => {
@@ -100,10 +130,17 @@ pub fn ingest(
             DedupOutcome::AdoptReference(_) => report.adopted += 1,
             DedupOutcome::Duplicate(_) => report.duplicates += 1,
         }
+        report.dispositions.push(Some(match decision.outcome {
+            DedupOutcome::Insert => RowDisposition::New,
+            DedupOutcome::Update(_) | DedupOutcome::Promote(_) => RowDisposition::Updated,
+            DedupOutcome::AdoptReference(_) | DedupOutcome::Duplicate(_) => {
+                RowDisposition::Duplicate
+            }
+        }));
     }
 
     // Transfers first, so that linked rows are skipped by the rules below.
-    let pairs = transfers::detect_internal_transfers(&db_tx, &report.touched_ids)?;
+    let pairs = transfers::detect_internal_transfers(db_tx, &report.touched_ids)?;
     report.transfers_matched = pairs.len();
     let linked: HashSet<i64> = pairs.iter().flat_map(|(a, b)| [*a, *b]).collect();
     let remaining: Vec<i64> = report
@@ -112,10 +149,9 @@ pub fn ingest(
         .copied()
         .filter(|id| !linked.contains(id))
         .collect();
-    report.categorized = rules::categorize(&db_tx, &remaining)?;
+    report.categorized = rules::categorize(db_tx, &remaining)?;
 
-    update_counters(&db_tx, origin, rows.len(), &report)?;
-    db_tx.commit()?;
+    update_counters(db_tx, origin, rows.len(), &report)?;
     Ok(report)
 }
 

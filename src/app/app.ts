@@ -22,6 +22,7 @@ export class App implements OnInit {
     { label: STRINGS.nav.rules, path: '/reglas' },
     { label: STRINGS.nav.budgets, path: '/presupuestos' },
     { label: STRINGS.nav.accounts, path: '/cuentas' },
+    { label: STRINGS.nav.import, path: '/importar' },
     { label: STRINGS.nav.settings, path: '/ajustes' },
   ];
   protected readonly appMode = inject(AppModeService);

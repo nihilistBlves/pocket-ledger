@@ -63,12 +63,12 @@ fn migrations_apply_and_are_idempotent_on_reopen() {
     let path = dir.path().join("ledger.db");
 
     let conn = open(&path, &test_key()).unwrap();
-    assert_eq!(user_version(&conn), 3);
+    assert_eq!(user_version(&conn), 4);
     let categories = count(&conn, "SELECT count(*) FROM categories");
     drop(conn);
 
     let conn = open(&path, &test_key()).unwrap();
-    assert_eq!(user_version(&conn), 3);
+    assert_eq!(user_version(&conn), 4);
     assert_eq!(count(&conn, "SELECT count(*) FROM categories"), categories);
 }
 
@@ -317,4 +317,19 @@ fn generated_keys_differ() {
     let b = DbKey::generate().unwrap();
     assert_ne!(a.as_bytes(), b.as_bytes());
     assert_ne!(a.as_bytes(), &[0u8; KEY_LEN]);
+}
+
+#[test]
+fn import_batches_gain_undone_at_in_migration_4() {
+    let conn = mem();
+    let account = add_account(&conn, "Cuenta demo");
+    conn.execute(
+        "INSERT INTO import_batches (account_id, profile) VALUES (?1, 'p')",
+        [account],
+    )
+    .unwrap();
+    let undone: Option<String> = conn
+        .query_row("SELECT undone_at FROM import_batches", [], |r| r.get(0))
+        .unwrap();
+    assert!(undone.is_none());
 }

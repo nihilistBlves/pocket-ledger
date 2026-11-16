@@ -6,6 +6,7 @@ use ledger_core::backup::BackupError;
 use ledger_core::bank::connect::{AuthError, ConnectError};
 use ledger_core::bank::enable_banking::EbError;
 use ledger_core::bank::sync::{SyncBlocked, SyncError};
+use ledger_core::import::ImportError;
 use ledger_core::keystore::KeystoreError;
 use serde::Serialize;
 
@@ -38,11 +39,30 @@ pub enum ErrorCode {
     RestoreRolledBack,
     RestoreFailed,
     BackupIo,
+    ImportFileTooLarge,
+    ImportNoFile,
+    ImportFileChanged,
+    ImportIo,
+    ImportFormatMismatch,
+    ImportEncoding,
+    ImportUnreadable,
+    ImportHeaderNotFound,
+    ImportMissingColumn,
+    ImportInvalidProfile,
+    ImportAccountMismatch,
+    ImportAccountBelongsToOther,
+    ImportAccountNotFound,
+    ImportNothingToImport,
+    ImportBuiltinProfile,
+    ImportBatchNotFound,
+    ImportBatchAlreadyUndone,
+    ImportBatchSynced,
+    AccountNameTaken,
 }
 
 impl ErrorCode {
     #[cfg(test)]
-    pub const ALL: [ErrorCode; 27] = [
+    pub const ALL: [ErrorCode; 46] = [
         ErrorCode::NotConfigured,
         ErrorCode::KeyMissing,
         ErrorCode::PortInUse,
@@ -70,6 +90,25 @@ impl ErrorCode {
         ErrorCode::RestoreRolledBack,
         ErrorCode::RestoreFailed,
         ErrorCode::BackupIo,
+        ErrorCode::ImportFileTooLarge,
+        ErrorCode::ImportNoFile,
+        ErrorCode::ImportFileChanged,
+        ErrorCode::ImportIo,
+        ErrorCode::ImportFormatMismatch,
+        ErrorCode::ImportEncoding,
+        ErrorCode::ImportUnreadable,
+        ErrorCode::ImportHeaderNotFound,
+        ErrorCode::ImportMissingColumn,
+        ErrorCode::ImportInvalidProfile,
+        ErrorCode::ImportAccountMismatch,
+        ErrorCode::ImportAccountBelongsToOther,
+        ErrorCode::ImportAccountNotFound,
+        ErrorCode::ImportNothingToImport,
+        ErrorCode::ImportBuiltinProfile,
+        ErrorCode::ImportBatchNotFound,
+        ErrorCode::ImportBatchAlreadyUndone,
+        ErrorCode::ImportBatchSynced,
+        ErrorCode::AccountNameTaken,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -101,6 +140,25 @@ impl ErrorCode {
             ErrorCode::RestoreRolledBack => "restore_rolled_back",
             ErrorCode::RestoreFailed => "restore_failed",
             ErrorCode::BackupIo => "backup_io",
+            ErrorCode::ImportFileTooLarge => "import_file_too_large",
+            ErrorCode::ImportNoFile => "import_no_file",
+            ErrorCode::ImportFileChanged => "import_file_changed",
+            ErrorCode::ImportIo => "import_io",
+            ErrorCode::ImportFormatMismatch => "import_format_mismatch",
+            ErrorCode::ImportEncoding => "import_encoding",
+            ErrorCode::ImportUnreadable => "import_unreadable",
+            ErrorCode::ImportHeaderNotFound => "import_header_not_found",
+            ErrorCode::ImportMissingColumn => "import_missing_column",
+            ErrorCode::ImportInvalidProfile => "import_invalid_profile",
+            ErrorCode::ImportAccountMismatch => "import_account_mismatch",
+            ErrorCode::ImportAccountBelongsToOther => "import_account_belongs_to_other",
+            ErrorCode::ImportAccountNotFound => "import_account_not_found",
+            ErrorCode::ImportNothingToImport => "import_nothing_to_import",
+            ErrorCode::ImportBuiltinProfile => "import_builtin_profile",
+            ErrorCode::ImportBatchNotFound => "import_batch_not_found",
+            ErrorCode::ImportBatchAlreadyUndone => "import_batch_already_undone",
+            ErrorCode::ImportBatchSynced => "import_batch_synced",
+            ErrorCode::AccountNameTaken => "account_name_taken",
         }
     }
 
@@ -165,6 +223,25 @@ impl ErrorCode {
                 "La restauración falló y no se pudo recuperar la base de datos anterior. Cierra y vuelve a abrir la aplicación; en la carpeta de datos se conserva una copia llamada pocket-ledger.db.pre-restore-… con tus datos anteriores."
             }
             ErrorCode::BackupIo => "No se pudo leer o escribir el archivo de la copia.",
+            ErrorCode::ImportFileTooLarge => "El archivo es demasiado grande para importarlo (máximo 20 MB).",
+            ErrorCode::ImportNoFile => "Primero elige el archivo que quieres importar.",
+            ErrorCode::ImportFileChanged => "El archivo elegido ya no coincide con el que se revisó. Vuelve a elegirlo.",
+            ErrorCode::ImportIo => "No se pudo leer el archivo.",
+            ErrorCode::ImportFormatMismatch => "El tipo de archivo no coincide con el formato indicado (CSV o Excel).",
+            ErrorCode::ImportEncoding => "El archivo no se puede leer con la codificación de texto indicada. Prueba con otra.",
+            ErrorCode::ImportUnreadable => "No se pudo leer el archivo: parece dañado o no tiene el formato indicado.",
+            ErrorCode::ImportHeaderNotFound => "No se encuentra la fila de cabecera con las columnas indicadas.",
+            ErrorCode::ImportMissingColumn => "Falta alguna de las columnas indicadas en la cabecera del archivo.",
+            ErrorCode::ImportInvalidProfile => "El perfil de importación no es válido. Revisa los separadores, el formato de fecha y las columnas.",
+            ErrorCode::ImportAccountMismatch => "El archivo pertenece a una cuenta distinta de la que has elegido.",
+            ErrorCode::ImportAccountBelongsToOther => "El archivo pertenece a otra cuenta que ya existe. Impórtalo en esa cuenta.",
+            ErrorCode::ImportAccountNotFound => "La cuenta elegida ya no existe.",
+            ErrorCode::ImportNothingToImport => "El archivo no tiene ninguna fila válida que importar.",
+            ErrorCode::ImportBuiltinProfile => "Los perfiles incluidos en la aplicación no se pueden sobrescribir. Usa otro nombre.",
+            ErrorCode::ImportBatchNotFound => "Esa importación ya no existe.",
+            ErrorCode::ImportBatchAlreadyUndone => "Esa importación ya estaba deshecha.",
+            ErrorCode::ImportBatchSynced => "No se puede deshacer: la sincronización bancaria ya ha actualizado movimientos de esta importación.",
+            ErrorCode::AccountNameTaken => "Ya existe una cuenta con ese nombre.",
         }
     }
 }
@@ -287,6 +364,36 @@ impl From<ledger_core::ledger::LedgerError> for CommandError {
             LedgerError::Conflict(_) => ErrorCode::Conflict,
             LedgerError::Db(_) => ErrorCode::Internal,
         })
+    }
+}
+
+/// Maps by variant only: no column name, row content or path can reach the UI.
+pub fn code_of_import(e: &ImportError) -> ErrorCode {
+    match e {
+        ImportError::InvalidProfile(_) => ErrorCode::ImportInvalidProfile,
+        ImportError::FormatMismatch => ErrorCode::ImportFormatMismatch,
+        ImportError::Encoding => ErrorCode::ImportEncoding,
+        ImportError::Csv { .. } | ImportError::Workbook | ImportError::SheetNotFound => {
+            ErrorCode::ImportUnreadable
+        }
+        ImportError::HeaderNotFound => ErrorCode::ImportHeaderNotFound,
+        ImportError::MissingColumn(_) => ErrorCode::ImportMissingColumn,
+        ImportError::AccountBelongsToOther { .. } => ErrorCode::ImportAccountBelongsToOther,
+        ImportError::AccountMismatch => ErrorCode::ImportAccountMismatch,
+        ImportError::AccountNotFound => ErrorCode::ImportAccountNotFound,
+        ImportError::BuiltinProfile => ErrorCode::ImportBuiltinProfile,
+        ImportError::TooLarge => ErrorCode::ImportFileTooLarge,
+        ImportError::NothingToImport => ErrorCode::ImportNothingToImport,
+        ImportError::BatchNotFound => ErrorCode::ImportBatchNotFound,
+        ImportError::BatchAlreadyUndone => ErrorCode::ImportBatchAlreadyUndone,
+        ImportError::BatchHasSyncedRows => ErrorCode::ImportBatchSynced,
+        ImportError::Db(_) | ImportError::Json(_) => ErrorCode::Internal,
+    }
+}
+
+impl From<ImportError> for CommandError {
+    fn from(e: ImportError) -> Self {
+        Self::new(code_of_import(&e))
     }
 }
 

@@ -313,6 +313,7 @@ pub fn convert(rows: &[RawRow], profile: &ImportProfile) -> Result<ParsedImport,
 
     let mut parsed = ParsedImport {
         rows: Vec::new(),
+        row_numbers: Vec::new(),
         errors: Vec::new(),
         file_sha256: String::new(),
         account_identity: preamble_identity(&rows[..preamble_end.min(rows.len())]),
@@ -322,7 +323,10 @@ pub fn convert(rows: &[RawRow], profile: &ImportProfile) -> Result<ParsedImport,
             continue;
         }
         match convert_row(row, &cols, profile) {
-            Ok(tx) => parsed.rows.push(tx),
+            Ok(tx) => {
+                parsed.rows.push(tx);
+                parsed.row_numbers.push(row.number);
+            }
             Err(reason) => parsed.errors.push(RowError {
                 row_number: row.number,
                 reason,
