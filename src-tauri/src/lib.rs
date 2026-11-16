@@ -1,6 +1,7 @@
 mod bank_commands;
 mod bank_config;
 mod errors;
+mod ledger_commands;
 mod logging;
 mod scheduler;
 mod state;
@@ -72,6 +73,14 @@ pub fn run() {
             bank_commands::bank_connect,
             bank_commands::bank_sync_now,
             bank_commands::bank_disconnect,
+            ledger_commands::ledger_dashboard,
+            ledger_commands::ledger_transactions,
+            ledger_commands::ledger_categories,
+            ledger_commands::ledger_tags,
+            ledger_commands::ledger_set_category,
+            ledger_commands::ledger_set_notes,
+            ledger_commands::ledger_set_tags,
+            ledger_commands::ledger_unlink_transfer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Pocket Ledger");
