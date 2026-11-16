@@ -36,6 +36,7 @@ describe('App', () => {
       'Reglas',
       'Presupuestos',
       'Cuentas',
+      'Importar',
       'Ajustes',
     ]);
     expect(el.querySelector('.app-info')?.textContent).toContain('9.9.9');

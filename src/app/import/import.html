@@ -1,0 +1,535 @@
+<svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 10V2.5M5 5l3-3 3 3M2.5 10v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 16 16"><path d="M4 1.5h5l3.5 3.5v9a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5v-12A.5.5 0 0 1 4 1.5zM9 1.5V5h3.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 11.1v.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v5M9.2 6.5v5"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.5L2.5 6.5l3 3M2.5 6.5h7a4 4 0 0 1 0 8H7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10M9 4.5L12.5 8 9 11.5"/></symbol>
+</svg>
+
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+</header>
+<p class="intro">{{ t.intro }}</p>
+
+@if (error(); as err) {
+  <div class="banner is-error alert" role="alert">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+    <div class="banner-body">{{ err.message }}</div>
+    <button type="button" class="btn-icon" [attr.aria-label]="t.dismiss" (click)="clearError()">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x" /></svg>
+    </button>
+  </div>
+}
+
+@if (notice(); as n) {
+  <div class="banner ok alert" role="status">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>
+    <div class="banner-body">{{ n }}</div>
+    <button type="button" class="btn-icon" [attr.aria-label]="t.dismiss" (click)="clearNotice()">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x" /></svg>
+    </button>
+  </div>
+}
+
+@if (step() !== 'start') {
+  <ol class="steps" [attr.aria-label]="t.stepsLabel">
+    @for (s of stepItems(); track s.key) {
+      <li [class]="stepClass(s)" [attr.aria-current]="s.current ? 'step' : null">{{ s.label }}</li>
+    }
+  </ol>
+}
+
+@switch (step()) {
+  @case ('start') {
+    <div class="grid">
+      <section class="card span-4" aria-labelledby="h-pick">
+        <div class="card-head"><h2 class="title-sm" id="h-pick" #stepHeading tabindex="-1">{{ t.pickTitle }}</h2></div>
+        <p class="body">{{ t.pickBody }}</p>
+        <div class="pick-action">
+          <button type="button" class="btn btn-primary" data-test="pick" [disabled]="busy() !== null" (click)="pick()">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload" /></svg>
+            {{ busy() === 'pick' ? t.picking : t.pickButton }}
+          </button>
+        </div>
+        <div class="local-note">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock" /></svg>
+          <span>{{ t.pickNote }}</span>
+        </div>
+      </section>
+
+      <section class="card card-flush span-8" aria-labelledby="h-hist">
+        <div class="card-head">
+          <h2 class="title-sm" id="h-hist">{{ t.historyTitle }}</h2>
+          @if (history().length > 0) {
+            <span class="caption">{{ t.historyCaption(history().length) }}</span>
+          }
+        </div>
+        @if (history().length === 0) {
+          <p class="empty muted">{{ historyLoaded() ? t.historyEmpty : t.loading }}</p>
+        } @else {
+          <table class="tbl top" data-test="history">
+            <thead>
+              <tr>
+                <th scope="col" class="c-date">{{ t.colDate }}</th>
+                <th scope="col">{{ t.colFile }}</th>
+                <th scope="col" class="c-acc">{{ t.colAccount }}</th>
+                <th scope="col" class="c-mov">{{ t.colMovements }}</th>
+                <th scope="col" class="r c-act"><span class="sr-only">{{ t.colActions }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of history(); track b.id) {
+                <tr>
+                  <td class="num">{{ dateTime(b.importedAt) }}</td>
+                  <td>{{ fileName(b) }}<span class="incl">{{ b.profile }}</span></td>
+                  <td>{{ b.accountName }}</td>
+                  @if (b.undoneAt) {
+                    <td class="num muted">{{ t.undone(date(b.undoneAt)) }}</td>
+                  } @else {
+                    <td class="num">
+                      {{ batchCounts(b) }}
+                      @if (b.errors > 0) {
+                        <span class="incl">{{ t.invalidCount(b.errors) }}</span>
+                      }
+                    </td>
+                  }
+                  <td class="r">
+                    @if (b.canUndo) {
+                      <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy() !== null" (click)="askUndoBatch(b)">
+                        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo" /></svg>{{ t.undo }}
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    </div>
+  }
+
+  @case ('format') {
+    @if (picked(); as file) {
+      <section class="card" [class.narrow]="!manual()" aria-labelledby="h-fmt">
+        <div class="file-row">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-file" /></svg>
+          <div class="meta"><strong data-test="file-name">{{ file.fileName }}</strong><span>{{ fileMeta() }}</span></div>
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy() !== null" (click)="pick()">{{ t.changeFile }}</button>
+        </div>
+
+        @if (!manual()) {
+          @if (detected(); as d) {
+            <div class="match" data-test="detected">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>
+              <div class="banner-body">
+                <strong id="h-fmt" #stepHeading tabindex="-1">{{ t.detectedTitle(d.name) }}</strong> {{ detectedText() }}
+              </div>
+            </div>
+          }
+          <div class="footer-actions">
+            <button type="button" class="btn btn-secondary" (click)="configureManually()">{{ t.configureManually }}</button>
+            <div class="right">
+              <button type="button" class="btn btn-secondary" (click)="cancel()">{{ t.cancel }}</button>
+              <button type="button" class="btn btn-primary" data-test="continue" [disabled]="busy() !== null" (click)="continueFromFormat()">
+                {{ busy() === 'preview' ? t.checking : t.next }}<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow" /></svg>
+              </button>
+            </div>
+          </div>
+        } @else if (form(); as f) {
+          <h2 class="title-sm map-title" id="h-fmt" #stepHeading tabindex="-1">{{ t.mapTitle }}</h2>
+          <p class="hint map-hint">{{ detected() ? t.mapHint : t.mapHintUnknown }}</p>
+
+          <div class="map-grid">
+            <div>
+              <label class="field-label" for="m-prof">{{ t.profile }}</label>
+              <span class="select">
+                <select id="m-prof" (change)="selectProfile($any($event.target).value)">
+                  @for (p of profileChoices(); track p.name) {
+                    <option [value]="p.name" [selected]="p.name === profileSelect()">{{ p.name }}{{ p.builtin ? '' : t.profileSavedSuffix }}</option>
+                  }
+                </select>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+              </span>
+            </div>
+
+            @if (csv(); as c) {
+              <div>
+                <label class="field-label" for="m-enc">{{ t.encoding }}</label>
+                <span class="select">
+                  <select id="m-enc" (change)="setEncoding($any($event.target).value)">
+                    @for (e of encodings; track e) {
+                      <option [value]="e" [selected]="c.encoding === e">{{ t.encodings[e] }}</option>
+                    }
+                  </select>
+                  <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+                </span>
+              </div>
+              <fieldset class="fieldset">
+                <legend class="field-label">{{ t.delimiter }}</legend>
+                <div class="seg">
+                  @for (d of delimiters; track d.value) {
+                    <label class="seg-item"><input type="radio" name="del" [checked]="c.delimiter === d.value" (change)="setDelimiter(d.value)" /><span>{{ d.label }}</span></label>
+                  }
+                </div>
+              </fieldset>
+            }
+
+            <div>
+              <label class="field-label" for="m-skip">{{ f.hasHeader ? t.skipRows : t.skipRowsData }}</label>
+              <input class="input num" id="m-skip" type="number" min="0" [placeholder]="t.skipRowsAuto" [value]="f.skipRows ?? ''" (input)="setSkipRows($any($event.target).value)" />
+              <label class="check check-top">
+                <input type="checkbox" id="m-header" [checked]="f.hasHeader" (change)="setHasHeader($any($event.target).checked)" />
+                <span>{{ t.hasHeader }}</span>
+              </label>
+            </div>
+            <div>
+              <label class="field-label" for="m-date">{{ t.dateFormat }}</label>
+              <span class="select">
+                <select id="m-date" (change)="setDateFormat($any($event.target).value)">
+                  @for (d of dateOptions(); track d.pattern) {
+                    <option [value]="d.pattern" [selected]="d.pattern === f.dateFormats[0]">{{ d.label }}</option>
+                  }
+                </select>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+              </span>
+            </div>
+            <fieldset class="fieldset">
+              <legend class="field-label">{{ t.amountFormat }}</legend>
+              <div class="seg">
+                @for (a of amountFormats; track a.key) {
+                  <label class="seg-item"><input type="radio" name="dec" [checked]="amountKey() === a.key" (change)="setAmountFormat(a.key)" /><span class="num">{{ a.label }}</span></label>
+                }
+              </div>
+            </fieldset>
+
+            <div class="section-title full">{{ t.columnsTitle }}</div>
+            @for (c of mainFields(); track c.key) {
+              <div>
+                <label class="field-label" [for]="'m-c-' + c.key">{{ c.label }}</label>
+                <span class="select">
+                  <select [id]="'m-c-' + c.key" (change)="setColumn(c.key, $any($event.target).value)">
+                    <option value="" [selected]="columnValue(c.key) === ''">{{ c.required ? t.pickColumn : t.none }}</option>
+                    @for (o of options(); track o.index) {
+                      <option [value]="o.index" [selected]="columnValue(c.key) === '' + o.index">{{ o.label }}</option>
+                    }
+                    @if (columnValue(c.key) === 'missing') {
+                      <option value="missing" selected disabled>{{ missingLabel(c.key) }}</option>
+                    }
+                  </select>
+                  <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+                </span>
+              </div>
+            }
+            <fieldset class="fieldset full">
+              <legend class="field-label">{{ t.amountMode }}</legend>
+              <div class="seg">
+                <label class="seg-item"><input type="radio" name="amt" [checked]="f.amountMode === 'single'" (change)="setAmountMode('single')" /><span>{{ t.amountSingle }}</span></label>
+                <label class="seg-item"><input type="radio" name="amt" [checked]="f.amountMode === 'split'" (change)="setAmountMode('split')" /><span>{{ t.amountSplit }}</span></label>
+              </div>
+            </fieldset>
+            @for (c of amountFields(); track c.key) {
+              <div>
+                <label class="field-label" [for]="'m-c-' + c.key">{{ c.label }}</label>
+                <span class="select">
+                  <select [id]="'m-c-' + c.key" (change)="setColumn(c.key, $any($event.target).value)">
+                    <option value="" [selected]="columnValue(c.key) === ''">{{ c.required ? t.pickColumn : t.none }}</option>
+                    @for (o of options(); track o.index) {
+                      <option [value]="o.index" [selected]="columnValue(c.key) === '' + o.index">{{ o.label }}</option>
+                    }
+                    @if (columnValue(c.key) === 'missing') {
+                      <option value="missing" selected disabled>{{ missingLabel(c.key) }}</option>
+                    }
+                  </select>
+                  <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+                </span>
+                @if (c.hint) {
+                  <p class="hint">{{ c.hint }}</p>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="section-title">{{ t.rawTitle }}</div>
+          @if (rawError(); as re) {
+            <div class="banner is-error" role="alert">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+              <div class="banner-body">{{ re.message }}</div>
+            </div>
+          } @else if (raw() === null) {
+            <p class="muted">{{ t.rawLoading }}</p>
+          } @else if (rawRows().length === 0) {
+            <p class="muted">{{ t.rawEmpty }}</p>
+          } @else {
+            <div class="raw" [class.is-loading]="rawLoading()" tabindex="0" [attr.aria-label]="t.rawTitle">
+              <table class="tbl" data-test="raw">
+                <thead>
+                  <tr>
+                    <th scope="col" class="rn">{{ t.rawRow }}</th>
+                    @for (o of options(); track o.index; let i = $index) {
+                      <th scope="col">{{ o.label.split(' · ')[0] }}@if (roles()[i]) { <small>{{ roles()[i] }}</small> }</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of rawRows(); track r.number) {
+                    <tr [class.is-skipped]="r.skipped" [class.is-header]="r.header">
+                      <td class="rn num">{{ r.number }}</td>
+                      @for (o of options(); track o.index) {
+                        <td>{{ r.cells[o.index] ?? '' }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @if (formError(); as fe) {
+            <p class="form-error" role="alert">{{ fe }}</p>
+          }
+          <div class="footer-actions">
+            <label class="check"><input type="checkbox" id="m-save" [checked]="saveProfile()" (change)="saveProfile.set($any($event.target).checked)" /><span>{{ t.saveProfile }}</span></label>
+            <div class="save-name">
+              <label class="sr-only" for="m-name">{{ t.profileName }}</label>
+              <input class="input" id="m-name" type="text" maxlength="80" [value]="saveName()" [disabled]="!saveProfile()" [placeholder]="t.profileName" (input)="setSaveName($any($event.target).value)" />
+            </div>
+            <div class="right">
+              <button type="button" class="btn btn-secondary" (click)="cancel()">{{ t.cancel }}</button>
+              <button type="button" class="btn btn-primary" data-test="continue" [disabled]="busy() !== null" (click)="continueFromFormat()">
+                {{ busy() === 'preview' ? t.checking : t.next }}<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow" /></svg>
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  @case ('account') {
+    <section class="card narrow" aria-labelledby="h-acc">
+      <h2 class="title-sm" id="h-acc" #stepHeading tabindex="-1">{{ t.accountTitle }}</h2>
+
+      @if (selectedAccount(); as acc) {
+        @switch (identity()?.status) {
+          @case ('match') {
+            <div class="match" data-test="match">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>
+              <div class="banner-body">
+                <strong>{{ acc.name }}@if (mask(acc); as m) { ({{ m }}) }</strong><br />{{ t.matchBody }}
+              </div>
+            </div>
+          }
+          @case ('will_adopt') {
+            <p class="note" data-test="adopt">{{ t.willAdopt }}</p>
+          }
+          @case ('mismatch') {
+            <div class="banner is-error" role="alert" data-test="mismatch">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+              <div class="banner-body"><strong>{{ t.mismatchTitle }}</strong> {{ t.mismatchBody(acc.name) }}</div>
+            </div>
+          }
+          @case ('belongs_to_other') {
+            <div class="banner is-error" role="alert" data-test="other">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+              @if (otherAccount(); as o) {
+                <div class="banner-body"><strong>{{ t.otherTitle(o.name) }}</strong> {{ t.otherBody }}</div>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy() !== null" (click)="useAccount(o.id)">{{ t.useAccount(o.name) }}</button>
+              } @else {
+                <div class="banner-body"><strong>{{ t.otherTitle('—') }}</strong> {{ t.otherBody }}</div>
+              }
+            </div>
+          }
+          @case ('account_not_found') {
+            <div class="banner is-error" role="alert">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+              <div class="banner-body"><strong>{{ t.notFoundTitle }}</strong></div>
+            </div>
+          }
+        }
+      }
+
+      <div class="acc-select">
+        <label class="field-label" for="a-acc">{{ t.accountLabel }}</label>
+        <span class="select">
+          <select id="a-acc" [disabled]="busy() !== null" (change)="onAccount($any($event.target).value)">
+            @if (selected() === null) {
+              <option value="" selected>{{ t.accountPick }}</option>
+            }
+            @for (a of accountItems(); track a.id) {
+              <option [value]="a.id" [selected]="selected() === a.id">{{ a.label }}</option>
+            }
+            <option value="new" [selected]="selected() === 'new'">{{ t.accountNew }}</option>
+          </select>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down" /></svg>
+        </span>
+      </div>
+
+      @if (selected() === 'new') {
+        <div class="new-acc">
+          <label class="field-label" for="a-new">{{ t.newAccountName }}</label>
+          <div class="new-acc-row">
+            <input class="input" id="a-new" type="text" maxlength="80" [value]="newName()" (input)="setNewName($any($event.target).value)" (keydown.enter)="createAccount()" />
+            <button type="button" class="btn btn-secondary" data-test="create-account" [disabled]="busy() !== null" (click)="createAccount()">{{ t.newAccountCreate }}</button>
+          </div>
+          @if (newNameError(); as ne) {
+            <p class="form-error" role="alert">{{ ne }}</p>
+          }
+        </div>
+      }
+
+      <div class="footer-actions">
+        <button type="button" class="btn btn-secondary" (click)="back()">{{ t.back }}</button>
+        <div class="right">
+          <button type="button" class="btn btn-secondary" (click)="cancel()">{{ t.cancel }}</button>
+          <button type="button" class="btn btn-primary" data-test="to-review" [disabled]="!canPreview()" (click)="toReview()">
+            {{ t.preview }}<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow" /></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  @case ('review') {
+    @if (preview(); as p) {
+      <h2 class="sr-only" id="h-rev" #stepHeading tabindex="-1">{{ t.steps.review }}</h2>
+      <section class="card counts kpis" [attr.aria-label]="t.reviewKpiLabel">
+        <div class="kpi">
+          <div class="kpi-label">{{ t.kpiRows }}</div>
+          <div class="kpi-value num" data-test="kpi-rows">{{ p.totalRows }}</div>
+          <div class="kpi-delta">{{ range() }}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">{{ t.kpiNew }}</div>
+          <div class="kpi-value num status-new" data-test="kpi-new">{{ counts()?.wouldInsert ?? 0 }}</div>
+          <div class="kpi-delta">{{ t.kpiNewSub(accountName()) }}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">{{ t.kpiDup }}</div>
+          <div class="kpi-value num" data-test="kpi-dup">{{ counts()?.duplicates ?? 0 }}</div>
+          <div class="kpi-delta">{{ t.kpiDupSub }}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">{{ t.kpiInvalid }}</div>
+          <div class="kpi-value num" data-test="kpi-bad">{{ invalidCount() }}</div>
+          <div class="kpi-delta">{{ t.kpiInvalidSub }}</div>
+        </div>
+      </section>
+      <div class="grid">
+        <section class="card card-flush" [class.span-8]="p.parseErrorCount > 0" [class.span-12]="p.parseErrorCount === 0" aria-labelledby="h-prev">
+          <div class="card-head">
+            <h2 class="title-sm" id="h-prev">{{ t.firstRows }}</h2>
+            <span class="caption">{{ t.firstRowsCaption(p.rows.length, p.validRows) }}</span>
+          </div>
+          <table class="tbl" data-test="rows">
+            <thead>
+              <tr>
+                <th scope="col" class="rn c-rn">{{ t.colRow }}</th>
+                <th scope="col" class="c-date2">{{ t.colDate }}</th>
+                <th scope="col">{{ t.colConcept }}</th>
+                <th scope="col" class="r c-amt">{{ t.colAmount }}</th>
+                <th scope="col" class="c-st">{{ t.colStatus }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of p.rows; track r.rowNumber) {
+                <tr>
+                  <td class="num muted">{{ r.rowNumber }}</td>
+                  <td class="num">{{ date(r.date) }}</td>
+                  <td>{{ r.description }}</td>
+                  <td class="r num" [class.amt-pos]="r.amountCents > 0">{{ signed(r) }}</td>
+                  <td><span [class]="r.status === 'new' ? 'status-new' : 'status-dup'">{{ statusText(r) }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+        @if (p.parseErrorCount > 0) {
+          <section class="card span-4" aria-labelledby="h-bad">
+            <div class="card-head"><h2 class="title-sm" id="h-bad">{{ t.badTitle }}</h2></div>
+            <ul class="err-list" data-test="errors">
+              @for (e of p.parseErrors; track e.rowNumber) {
+                <li><span class="num">{{ t.badRow(e.rowNumber) }}</span><span>{{ rowError(e.reason) }}</span></li>
+              }
+              @if (moreErrors() > 0) {
+                <li><span></span><span class="muted">{{ t.badMore(moreErrors()) }}</span></li>
+              }
+            </ul>
+            <p class="hint">{{ t.badHint }}</p>
+          </section>
+        }
+      </div>
+      @if (importCount() === 0) {
+        <div class="banner" role="status" data-test="nothing">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+          <div class="banner-body">{{ t.nothingToImport }}</div>
+        </div>
+      }
+      <div class="footer-actions footer-plain">
+        <button type="button" class="btn btn-secondary" (click)="back()">{{ t.back }}</button>
+        <div class="right">
+          <button type="button" class="btn btn-secondary" (click)="cancel()">{{ t.cancel }}</button>
+          <button type="button" class="btn btn-primary" data-test="commit" [disabled]="!canCommit()" (click)="commit()">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload" /></svg>
+            {{ busy() === 'commit' ? t.importing : t.importN(importCount()) }}
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  @case ('result') {
+    @if (result(); as r) {
+      <section class="card narrow" aria-labelledby="h-res">
+        <div class="res-head">
+          <span class="res ok"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg></span>
+          <h2 class="title-sm" id="h-res" #stepHeading tabindex="-1">{{ t.resultTitle }}</h2>
+        </div>
+        <dl class="dl res-dl" data-test="result">
+          <dt>{{ t.resAccount }}</dt><dd>{{ resultAccountName() }}</dd>
+          <dt>{{ t.resNew }}</dt><dd class="num">{{ r.inserted }}</dd>
+          <dt>{{ t.resDup }}</dt><dd class="num">{{ r.duplicates }}</dd>
+          @if (r.updated > 0) {
+            <dt>{{ t.resUpdated }}</dt><dd class="num">{{ r.updated }}</dd>
+          }
+          <dt>{{ t.resInvalid }}</dt><dd class="num">{{ r.invalidRows }}</dd>
+          <dt>{{ t.resTransfers }}</dt><dd class="num">{{ r.transfersMatched }}</dd>
+          <dt>{{ t.resCategorized }}</dt><dd class="num">{{ r.categorized }}</dd>
+        </dl>
+        @if (r.profileSaved) {
+          <p class="hint">{{ t.resProfileSaved(saveName()) }}</p>
+        }
+        <div class="footer-actions">
+          <button type="button" class="btn btn-secondary" data-test="undo-result" [disabled]="busy() !== null || r.inserted === 0" (click)="askUndoResult()">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo" /></svg>{{ t.undoImport }}
+          </button>
+          <div class="right">
+            <button type="button" class="btn btn-secondary" (click)="anotherFile()">{{ t.importAnother }}</button>
+            <a class="btn btn-primary" routerLink="/movimientos">{{ t.viewTransactions }}</a>
+          </div>
+        </div>
+      </section>
+    }
+  }
+}
+
+@if (undoTarget(); as u) {
+  <app-modal labelledBy="undo-t" (dismiss)="closeUndo()">
+    <h2 class="title-sm" id="undo-t">{{ t.undoTitle(u.fileName) }}</h2>
+    <p class="body">{{ t.undoBody(u.inserted, u.accountName) }}</p>
+    <p class="hint">{{ t.undoHint }}</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeUndo()">{{ common.cancel }}</button>
+      <button type="button" class="btn btn-secondary btn-danger" data-test="undo-confirm" [disabled]="busy() !== null" (click)="confirmUndo()">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-trash" /></svg>{{ t.undoConfirm }}
+      </button>
+    </div>
+  </app-modal>
+}
