@@ -19,7 +19,8 @@ import {
 } from '../core/format';
 import { STRINGS } from '../core/strings';
 import { NOW } from '../ledger/clock';
-import { Dashboard as DashboardData, PeriodTotals, TxRow } from '../ledger/ledger.models';
+import { CategoryOption, Dashboard as DashboardData, PeriodTotals, TxRow } from '../ledger/ledger.models';
+import { storedColorClass } from '../ledger/colors';
 import { LedgerService } from '../ledger/ledger.service';
 import { MonthSelector } from '../ledger/month-selector';
 import { buildChart, formatAxis } from './evolution-chart';
@@ -104,6 +105,7 @@ export class Dashboard {
 
   protected readonly month = signal(monthOf(this.now()));
   protected readonly data = signal<DashboardData | null>(null);
+  private readonly categoryOptions = signal<CategoryOption[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<CommandError | null>(null);
   protected readonly query = signal('');
@@ -178,7 +180,14 @@ export class Dashboard {
     });
     const rows = cats
       .slice(0, 6)
-      .map((c, i) => row(c.categoryId === null ? this.l.uncategorized : c.name, c.expenseCents, null, `c${i + 1}`));
+      .map((c, i) =>
+        row(
+          c.categoryId === null ? this.l.uncategorized : c.name,
+          c.expenseCents,
+          null,
+          storedColorClass(this.categoryOptions(), c.categoryId) || `c${i + 1}`,
+        ),
+      );
     const rest = cats.slice(6);
     if (rest.length) {
       rows.push(row(this.t.others, rest.reduce((s, c) => s + c.expenseCents, 0), rest.length, ''));
@@ -224,12 +233,21 @@ export class Dashboard {
     this.loading.set(true);
     this.error.set(null);
     try {
+      void this.loadCategoryOptions();
       const data = await this.ledger.dashboard(month, isoDate(this.now()));
       if (id === this.requestId) this.data.set(data);
     } catch (e) {
       if (id === this.requestId) this.error.set(toCommandError(e));
     } finally {
       if (id === this.requestId) this.loading.set(false);
+    }
+  }
+
+  private async loadCategoryOptions(): Promise<void> {
+    try {
+      this.categoryOptions.set((await this.ledger.categories()) ?? []);
+    } catch {
+      // Colours fall back to the default order.
     }
   }
 
@@ -266,6 +284,8 @@ export class Dashboard {
   }
 
   protected rowClass(row: TxRow): string {
+    const stored = storedColorClass(this.categoryOptions(), row.categoryId, row.parentCategoryId);
+    if (stored) return stored;
     const name = row.parentCategoryName ?? row.categoryName;
     const idx = (this.data()?.categories ?? []).slice(0, 6).findIndex((c) => c.name === name);
     return idx >= 0 ? `c${idx + 1}` : '';

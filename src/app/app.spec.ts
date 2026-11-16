@@ -20,7 +20,7 @@ describe('App', () => {
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     const links = Array.from(el.querySelectorAll('nav a')).map((a) => a.textContent?.trim());
-    expect(links).toEqual(['Resumen', 'Movimientos', 'Cuentas']);
+    expect(links).toEqual(['Resumen', 'Movimientos', 'Categorías', 'Reglas', 'Presupuestos', 'Cuentas']);
     expect(el.querySelector('.app-info')?.textContent).toContain('9.9.9');
   });
 });

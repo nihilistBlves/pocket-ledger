@@ -140,3 +140,41 @@ export function formatRelative(value: string | Date, now: Date): string {
   if (hours < 24) return `hace ${hours} h`;
   return `hace ${Math.floor(hours / 24)} d`;
 }
+
+/**
+ * Parses an amount typed in es-ES style into integer cents: `150`, `150,5`, `1.234,56`, `1234.56`, `150 €`.
+ * Returns null for anything that is not a plain non-negative amount with at most two decimals.
+ */
+export function parseEuros(text: string): number | null {
+  const s = text.replace(/[\s€]/g, '');
+  let whole: string;
+  let frac = '';
+  if (s.includes(',')) {
+    const parts = s.split(',');
+    if (parts.length !== 2) return null;
+    whole = parts[0].replace(/\./g, '');
+    frac = parts[1];
+    // Dots before a comma must be proper thousands separators.
+    if (parts[0].includes('.') && !/^\d{1,3}(\.\d{3})+$/.test(parts[0])) return null;
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+    whole = s.replace(/\./g, '');
+  } else if (/^\d*\.\d{1,2}$/.test(s)) {
+    [whole, frac] = s.split('.');
+  } else {
+    whole = s;
+  }
+  if (!/^\d+$/.test(whole || '0') || !/^\d{0,2}$/.test(frac)) return null;
+  if (!whole && !frac) return null;
+  return Number(whole || '0') * 100 + Number(frac.padEnd(2, '0') || '0');
+}
+
+/** `15000` -> `150,00` (input value, no symbol or thousands separator). */
+export function formatEurosInput(cents: number): string {
+  const abs = Math.abs(Math.trunc(cents));
+  return `${Math.floor(abs / 100)},${pad(abs % 100)}`;
+}
+
+/** Basis points as a percentage with one decimal: `7810` -> `78,1 %`. */
+export function formatBp(bp: number): string {
+  return formatPercent(bp / 100);
+}

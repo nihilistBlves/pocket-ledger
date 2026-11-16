@@ -1,6 +1,7 @@
 mod bank_commands;
 mod bank_config;
 mod errors;
+mod ledger_admin_commands;
 mod ledger_commands;
 mod scheduler;
 mod state;
@@ -65,6 +66,18 @@ pub fn run() {
             ledger_commands::ledger_set_notes,
             ledger_commands::ledger_set_tags,
             ledger_commands::ledger_unlink_transfer,
+            ledger_admin_commands::ledger_category_tree,
+            ledger_admin_commands::ledger_create_category,
+            ledger_admin_commands::ledger_update_category,
+            ledger_admin_commands::ledger_delete_category,
+            ledger_admin_commands::ledger_rules,
+            ledger_admin_commands::ledger_save_rule,
+            ledger_admin_commands::ledger_delete_rule,
+            ledger_admin_commands::ledger_test_rule,
+            ledger_admin_commands::ledger_apply_rules_uncategorized,
+            ledger_admin_commands::ledger_budgets,
+            ledger_admin_commands::ledger_set_budget,
+            ledger_admin_commands::ledger_remove_budget,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Pocket Ledger");

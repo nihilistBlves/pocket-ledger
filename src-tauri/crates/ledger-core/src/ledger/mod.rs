@@ -21,16 +21,31 @@
 use serde::Serialize;
 use thiserror::Error;
 
+pub mod budgets;
+pub mod categories_admin;
 pub mod dashboard;
 pub mod edit;
 pub mod period;
+pub mod rules_admin;
 pub mod transactions;
 
 #[cfg(test)]
+mod admin_tests;
+#[cfg(test)]
 mod tests;
+
+pub use budgets::{budgets, remove_budget, set_budget, BudgetMonth};
+pub use categories_admin::{
+    category_tree, create_category, delete_category, update_category, CategoryNode,
+    DeleteCategoryResult,
+};
 
 pub use dashboard::{dashboard, Dashboard};
 pub use edit::{set_category, set_notes, set_tags, unlink_transfer, SetCategoryResult};
+pub use rules_admin::{
+    apply_rules_uncategorized, delete_rule, list_rules, save_rule, test_rule, ApplyResult,
+    RuleInput, RuleRow, RuleTest, SaveRuleResult,
+};
 pub use transactions::{categories, list_transactions, tag_names, CategoryOption, TxFilter, TxPage};
 
 /// SQL expression for the effective date of a row aliased `t`.
@@ -52,6 +67,10 @@ pub enum LedgerError {
     InvalidInput(&'static str),
     #[error("not found: {0}")]
     NotFound(&'static str),
+    /// Valid request that clashes with existing data (duplicate name or rule, budget
+    /// overlap, delete blocked).
+    #[error("conflict: {0}")]
+    Conflict(&'static str),
     #[error("database error")]
     Db(#[from] rusqlite::Error),
 }

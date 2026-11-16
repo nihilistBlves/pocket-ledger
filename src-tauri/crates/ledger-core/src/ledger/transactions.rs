@@ -75,6 +75,8 @@ pub struct CategoryOption {
     pub name: String,
     /// `income`, `expense`, `transfer` or `system`.
     pub kind: String,
+    /// Stored colour token (`cat-1`..`cat-8`, `other`); `None` = default / inherit.
+    pub color: Option<String>,
 }
 
 pub(crate) const ROW_SELECT: &str = "SELECT t.id, t.account_id, a.name, t.status, \
@@ -325,13 +327,13 @@ pub fn list_transactions(conn: &Connection, filter: &TxFilter) -> Result<TxPage>
 /// The category tree flattened: groups first (by `sort_order`), each followed by its children.
 pub fn categories(conn: &Connection) -> Result<Vec<CategoryOption>> {
     let mut stmt = conn.prepare(
-        "SELECT id, parent_id, key, name, kind FROM categories
+        "SELECT id, parent_id, key, name, kind, color FROM categories
          ORDER BY COALESCE((SELECT p.sort_order FROM categories p WHERE p.id = categories.parent_id), sort_order),
                   COALESCE(parent_id, id), parent_id IS NOT NULL, sort_order, id",
     )?;
     let rows = stmt
         .query_map([], |r| {
-            Ok(CategoryOption { id: r.get(0)?, parent_id: r.get(1)?, key: r.get(2)?, name: r.get(3)?, kind: r.get(4)? })
+            Ok(CategoryOption { id: r.get(0)?, parent_id: r.get(1)?, key: r.get(2)?, name: r.get(3)?, kind: r.get(4)?, color: r.get(5)? })
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)

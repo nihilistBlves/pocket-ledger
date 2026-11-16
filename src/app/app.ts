@@ -16,6 +16,9 @@ export class App implements OnInit {
   protected readonly navItems = [
     { label: STRINGS.nav.summary, path: '/resumen' },
     { label: STRINGS.nav.transactions, path: '/movimientos' },
+    { label: STRINGS.nav.categories, path: '/categorias' },
+    { label: STRINGS.nav.rules, path: '/reglas' },
+    { label: STRINGS.nav.budgets, path: '/presupuestos' },
     { label: STRINGS.nav.accounts, path: '/cuentas' },
   ];
   protected readonly info = signal<AppInfo | null>(null);

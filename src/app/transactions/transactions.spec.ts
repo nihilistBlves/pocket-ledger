@@ -17,10 +17,10 @@ function row(id: number, extra: Partial<TxRow> = {}): TxRow {
 }
 
 const CATEGORIES: CategoryOption[] = [
-  { id: 10, parentId: null, key: null, name: 'Alimentación', kind: 'expense' },
-  { id: 11, parentId: 10, key: null, name: 'Supermercado', kind: 'expense' },
-  { id: 12, parentId: 10, key: null, name: 'Restaurantes', kind: 'expense' },
-  { id: 20, parentId: null, key: null, name: 'Transferencias internas', kind: 'transfer' },
+  { id: 10, parentId: null, key: null, name: 'Alimentación', kind: 'expense', color: null },
+  { id: 11, parentId: 10, key: null, name: 'Supermercado', kind: 'expense', color: null },
+  { id: 12, parentId: 10, key: null, name: 'Restaurantes', kind: 'expense', color: null },
+  { id: 20, parentId: null, key: null, name: 'Transferencias internas', kind: 'transfer', color: null },
 ];
 
 function page(rows: TxRow[], extra: Partial<TxPage> = {}): TxPage {
