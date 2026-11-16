@@ -1,0 +1,197 @@
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <app-month-selector [month]="month()" (monthChange)="setMonth($event)" />
+    <form class="search" role="search" (submit)="submitSearch($event)">
+      <label class="sr-only" for="dash-q">{{ t.search }}</label>
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>
+      <input class="input" id="dash-q" type="search" [placeholder]="t.search" [value]="query()" (input)="query.set($any($event.target).value)" style="width: 220px" />
+    </form>
+    <button type="button" class="btn btn-primary" [disabled]="!canSync()" (click)="sync()">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 0 1-9.6 3.7M2.5 8a5.5 5.5 0 0 1 9.6-3.7M12.5 1.8v2.8H9.7M3.5 14.2v-2.8h2.8" /></svg>
+      {{ bank.busy() === 'sync' ? t.syncing : t.sync }}
+    </button>
+  </div>
+</header>
+
+@if (error(); as err) {
+  <div class="banner is-error" role="alert">
+    <div class="banner-body">{{ l.loadError }} {{ err.message }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="retry()">{{ l.retry }}</button>
+  </div>
+}
+
+@if (data(); as d) {
+  @if (isEmptyAccounts()) {
+    <section class="card empty" aria-live="polite">
+      <p>{{ t.emptyNoAccounts }}</p>
+      <a class="btn btn-secondary" routerLink="/cuentas">{{ l.toAccounts }}</a>
+    </section>
+  } @else {
+    @if (isEmptyMonth()) {
+      <section class="card empty" aria-live="polite">
+        <p>{{ t.emptyNoMonth(monthLabel()) }}</p>
+        <a class="btn btn-secondary" routerLink="/cuentas">{{ l.toAccounts }}</a>
+      </section>
+    } @else {
+      <section class="card kpis" [attr.aria-label]="t.kpiLabel(monthLabel())" [attr.aria-busy]="loading()">
+        @for (k of kpis(); track k.key) {
+          <div class="kpi" [attr.data-kpi]="k.key">
+            <div class="kpi-label">{{ k.label }}</div>
+            <div class="kpi-value num">{{ k.value }}</div>
+            <div class="kpi-delta">
+              @if (k.delta; as dl) {
+                <span class="delta num" [class.good]="dl.cls === 'good'" [class.bad]="dl.cls === 'bad'">
+                  @if (dl.arrow) {
+                    <span aria-hidden="true">{{ dl.arrow }}</span> <span class="sr-only">{{ dl.word }} </span>
+                  }{{ dl.text }}
+                </span>
+                <span>{{ vsLabel() }}</span>
+              } @else {
+                <span>{{ t.noPrevious }}</span>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <div class="grid">
+      @if (!isEmptyMonth() && evolution(); as ev) {
+        <section class="card span-8" aria-labelledby="h-evo">
+          <div class="card-head">
+            <h2 class="title-sm" id="h-evo">{{ t.evolutionTitle }}</h2>
+            <span class="caption">{{ evolutionCaption() }}</span>
+          </div>
+          <div class="legend" aria-hidden="true">
+            <span><i class="sw sw-in"></i>{{ l.income }}</span>
+            <span><i class="sw sw-out"></i>{{ l.expense }}</span>
+            <span><i class="sw sw-line"></i>{{ l.balance }}</span>
+            @if (partialNote()) {
+              <span class="muted">{{ partialNote() }}</span>
+            }
+          </div>
+          <figure #chartBox>
+            <svg class="chart" [attr.width]="ev.width" [attr.height]="ev.height" [attr.viewBox]="'0 0 ' + ev.width + ' ' + ev.height" role="img" aria-labelledby="chart-t chart-d">
+              <title id="chart-t">{{ t.evolutionChartTitle }}</title>
+              <desc id="chart-d">{{ chartDesc() }}</desc>
+              @for (tick of ev.ticks; track tick.cents) {
+                <line class="grid-l" [attr.x1]="ev.left" [attr.x2]="ev.right" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+                <text text-anchor="end" [attr.x]="ev.left - 8" [attr.y]="tick.y + 4">{{ fmt.axis(tick.cents) }}</text>
+              }
+              @for (s of ev.slots; track s.month) {
+                @if (isCurrent(s.month)) {
+                  <rect class="month-bg" [attr.x]="s.slotX + 2" [attr.y]="ev.top" [attr.width]="s.slotWidth - 4" [attr.height]="ev.bottom - ev.top" rx="4" />
+                }
+                <rect class="hit" [attr.x]="s.slotX" [attr.y]="ev.top" [attr.width]="s.slotWidth" [attr.height]="ev.bottom - ev.top">
+                  <title>{{ axisLabel(s.month) }} · {{ l.income }} {{ fmt.cents(s.data.incomeCents) }} · {{ l.expense }} {{ fmt.cents(s.data.expenseCents) }} · {{ l.balance }} {{ fmt.signed(s.data.balanceCents) }}</title>
+                </rect>
+                @if (s.income; as b) {
+                  <path class="bar-in" [attr.d]="b.path"><title>{{ axisLabel(s.month) }} · {{ l.income }} {{ fmt.cents(s.data.incomeCents) }}</title></path>
+                }
+                @if (s.expense; as b) {
+                  <path class="bar-out" [attr.d]="b.path"><title>{{ axisLabel(s.month) }} · {{ l.expense }} {{ fmt.cents(s.data.expenseCents) }}</title></path>
+                }
+              }
+              <line class="zero-l" [attr.x1]="ev.left" [attr.x2]="ev.right" [attr.y1]="ev.zeroY" [attr.y2]="ev.zeroY" />
+              <polyline class="bal-line" [attr.points]="ev.linePoints" />
+              @for (s of ev.slots; track s.month) {
+                <circle class="bal-dot" [attr.cx]="s.cx" [attr.cy]="s.balanceY" r="4"><title>{{ axisLabel(s.month) }} · {{ l.balance }} {{ fmt.signed(s.data.balanceCents) }}</title></circle>
+                <text text-anchor="middle" [class.now]="isCurrent(s.month)" [attr.x]="s.cx" [attr.y]="ev.height - 12">{{ axisLabel(s.month) }}</text>
+              }
+            </svg>
+            <table class="sr-only">
+              <caption>{{ t.evolutionChartTitle }}</caption>
+              <thead>
+                <tr><th scope="col">{{ t.chartMonth }}</th><th scope="col">{{ l.income }}</th><th scope="col">{{ l.expense }}</th><th scope="col">{{ l.balance }}</th></tr>
+              </thead>
+              <tbody>
+                @for (s of ev.slots; track s.month) {
+                  <tr>
+                    <th scope="row">{{ axisLabel(s.month) }}</th>
+                    <td>{{ fmt.cents(s.data.incomeCents) }}</td>
+                    <td>{{ fmt.cents(s.data.expenseCents) }}</td>
+                    <td>{{ fmt.signed(s.data.balanceCents) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </figure>
+        </section>
+
+        <section class="card span-4" aria-labelledby="h-cat">
+          <div class="card-head">
+            <h2 class="title-sm" id="h-cat">{{ t.categoriesTitle }}</h2>
+            <span class="caption">{{ monthShort() }}</span>
+          </div>
+          <ul class="catlist">
+            @for (c of catRows(); track c.name) {
+              <li>
+                <div class="catrow-top">
+                  <span class="cat"><i [class]="c.cls"></i>{{ c.name }}@if (c.count !== null) { <span class="muted"> ({{ c.count }})</span> }</span>
+                  <span class="num">{{ c.amount }}</span>
+                  <span class="pct num">{{ c.pct }}</span>
+                </div>
+                <div class="bar" aria-hidden="true"><span [class]="c.cls" [style.width.%]="c.width"></span></div>
+              </li>
+            }
+          </ul>
+          <div class="total-line"><span>{{ t.totalExpenses }}</span><span class="num">{{ fmt.cents(d.totals.expenseCents) }}</span></div>
+        </section>
+      }
+
+      <section class="card span-4" aria-labelledby="h-acc">
+        <div class="card-head">
+          <h2 class="title-sm" id="h-acc">{{ t.accountsTitle }}</h2>
+          <a class="link" routerLink="/cuentas">{{ t.viewAccounts }}</a>
+        </div>
+        <ul class="acct-list">
+          @for (a of d.accounts; track a.id) {
+            <li>
+              <div class="grow">
+                <div class="name">{{ a.name }}</div>
+                <div class="sub num">{{ accountSub(a) }}</div>
+              </div>
+              <div class="bal num">{{ a.balanceCents === null ? '—' : fmt.cents(a.balanceCents, a.currency) }}</div>
+            </li>
+          }
+        </ul>
+        <div class="total-line flat"><span>{{ t.total }}</span><span class="num">{{ fmt.cents(accountsTotal()) }}</span></div>
+      </section>
+
+      @if (!isEmptyMonth()) {
+        <section class="card card-flush span-8" aria-labelledby="h-last">
+          <div class="card-head">
+            <h2 class="title-sm" id="h-last">{{ t.recentTitle }}</h2>
+            <a class="link" routerLink="/movimientos" [queryParams]="{ month: d.month }">{{ t.viewAll(d.monthTxCount) }}</a>
+          </div>
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 72px">{{ t.colDate }}</th>
+                <th scope="col">{{ t.colDescription }}</th>
+                <th scope="col" style="width: 160px">{{ t.colCategory }}</th>
+                <th scope="col" class="r" style="width: 112px">{{ t.colAmount }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of d.recent; track r.id) {
+                <tr [class.is-pending]="r.status === 'pending'" [class.is-transfer]="r.isTransfer">
+                  <td class="num muted">{{ fmt.dayMonth(r.date) }}</td>
+                  <td [attr.title]="rowTitle(r)">
+                    <span class="desc">{{ r.description }}</span>
+                    @if (r.status === 'pending') { <span class="badge badge-honey">{{ l.pending }}</span> }
+                  </td>
+                  <td><span class="cat"><i [class]="rowClass(r)"></i>{{ rowCategory(r) }}</span></td>
+                  <td class="r num" [class.amt-pos]="r.amountCents > 0 && !r.isTransfer" [class.amt-muted]="r.isTransfer">{{ fmt.signed(r.amountCents) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    </div>
+  }
+} @else if (loading()) {
+  <p class="muted" role="status">{{ l.loading }}</p>
+}

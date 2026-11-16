@@ -22,12 +22,14 @@ pub enum ErrorCode {
     BlockedTooSoon,
     Busy,
     BankError,
+    InvalidInput,
+    NotFound,
     Internal,
 }
 
 impl ErrorCode {
     #[cfg(test)]
-    pub const ALL: [ErrorCode; 13] = [
+    pub const ALL: [ErrorCode; 15] = [
         ErrorCode::NotConfigured,
         ErrorCode::KeyMissing,
         ErrorCode::PortInUse,
@@ -40,6 +42,8 @@ impl ErrorCode {
         ErrorCode::BlockedTooSoon,
         ErrorCode::Busy,
         ErrorCode::BankError,
+        ErrorCode::InvalidInput,
+        ErrorCode::NotFound,
         ErrorCode::Internal,
     ];
 
@@ -57,6 +61,8 @@ impl ErrorCode {
             ErrorCode::BlockedTooSoon => "blocked_too_soon",
             ErrorCode::Busy => "busy",
             ErrorCode::BankError => "bank_error",
+            ErrorCode::InvalidInput => "invalid_input",
+            ErrorCode::NotFound => "not_found",
             ErrorCode::Internal => "internal",
         }
     }
@@ -93,6 +99,8 @@ impl ErrorCode {
             ErrorCode::BankError => {
                 "El banco o Enable Banking devolvió un error. Inténtalo de nuevo más tarde."
             }
+            ErrorCode::InvalidInput => "Los datos enviados no son válidos. Revisa los valores e inténtalo de nuevo.",
+            ErrorCode::NotFound => "El movimiento o la categoría ya no existe.",
             ErrorCode::Internal => "Error interno de la aplicación. Inténtalo de nuevo.",
         }
     }
@@ -179,6 +187,17 @@ impl From<ConnectError> for CommandError {
 impl From<KeystoreError> for CommandError {
     fn from(_: KeystoreError) -> Self {
         Self::new(ErrorCode::Internal)
+    }
+}
+
+impl From<ledger_core::ledger::LedgerError> for CommandError {
+    fn from(e: ledger_core::ledger::LedgerError) -> Self {
+        use ledger_core::ledger::LedgerError;
+        Self::new(match e {
+            LedgerError::InvalidInput(_) => ErrorCode::InvalidInput,
+            LedgerError::NotFound(_) => ErrorCode::NotFound,
+            LedgerError::Db(_) => ErrorCode::Internal,
+        })
     }
 }
 

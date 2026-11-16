@@ -20,6 +20,7 @@ pub mod dedup;
 pub mod import;
 pub mod ingest;
 pub mod keystore;
+pub mod ledger;
 pub mod model;
 pub mod money;
 pub mod normalize;
