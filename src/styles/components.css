@@ -99,3 +99,59 @@ textarea.input { height: auto; min-height: 88px; padding: 8px 12px; line-height:
 
 .alert-line { margin: 0; }
 .link { color: var(--accent-text); }
+
+.c7 { background: var(--cat-7) !important; } .c8 { background: var(--cat-8) !important; } .c0 { background: var(--cat-other) !important; }
+
+/* Phase 7: shared by Categorías, Reglas and Presupuestos (ported from design/mocks/extras.css) */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start; }
+.split.no-panel { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1279px) { .split { grid-template-columns: minmax(0, 1fr) 320px; } }
+.panel { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+.panel .stack, .dialog .stack { display: flex; flex-direction: column; gap: 16px; }
+.panel-note { font-size: 13px; line-height: 1.4; color: var(--text-body); }
+.panel-section { border-top: 1px solid var(--border); padding-top: 16px; }
+.hint { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+.intro { margin: -8px 0 4px; max-width: 860px; font-size: 13px; line-height: 1.4; color: var(--text-body); }
+.intro .icon { vertical-align: -3px; }
+.detail-title { margin-top: 8px; font-size: 16px; font-weight: 584; color: var(--text); overflow-wrap: anywhere; }
+fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.plain legend { padding: 0; }
+.actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.cp { margin-left: 8px; font-size: 12px; color: var(--text-muted); }
+.incl { display: block; font-size: 12px; color: var(--text-muted); font-weight: 400; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; }
+.tbl tbody.two td { height: auto; padding-top: 8px; padding-bottom: 8px; }
+.tbl tbody tr[tabindex] { cursor: pointer; }
+.tbl tbody tr.is-selected { background: var(--surface-selected); }
+.tbl tbody tr.is-selected td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.tbl tbody tr:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); outline: none; }
+.amt-neg { color: var(--negative); }
+.status-line:empty { display: none; }
+.status-line .banner { margin: 0; }
+.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; color: var(--text-body); }
+
+.btn-danger { color: var(--negative); }
+.btn-danger .icon { color: var(--negative); }
+.row-act { display: inline-flex; gap: 4px; justify-content: flex-end; }
+.row-act .btn-icon { width: 32px; height: 32px; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { position: relative; width: 32px; height: 32px; padding: 0; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.swatch i { width: 16px; height: 16px; border-radius: 999px; background: var(--cat-other); }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text); border-color: transparent; }
+.swatch:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.swatch-inherit { width: auto; padding: 0 10px 0 8px; gap: 6px; font-size: 12px; font-weight: 492; color: var(--text-body); }
+.swatch-inherit i { width: 14px; height: 14px; }
+
+/* Modal dialog (backdrop + card) */
+.backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgb(38 27 7 / 0.4); }
+.dialog { width: 100%; max-width: 520px; max-height: calc(100vh - 48px); overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-popover); padding: 24px; }
+.dialog h2 { margin-bottom: 8px; }
+.dialog .stack { margin-top: 16px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
+.radio-list { display: grid; gap: 8px; }
+.radio-list label { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--text); min-height: 24px; }
+.radio-list input { margin-top: 2px; accent-color: var(--accent); }
+.radio-list small { display: block; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+.form-error { margin: 0; font-size: 13px; color: var(--negative); }
+.foot-note { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.over { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 12px; font-weight: 492; color: var(--negative); }

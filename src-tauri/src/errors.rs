@@ -24,12 +24,13 @@ pub enum ErrorCode {
     BankError,
     InvalidInput,
     NotFound,
+    Conflict,
     Internal,
 }
 
 impl ErrorCode {
     #[cfg(test)]
-    pub const ALL: [ErrorCode; 15] = [
+    pub const ALL: [ErrorCode; 16] = [
         ErrorCode::NotConfigured,
         ErrorCode::KeyMissing,
         ErrorCode::PortInUse,
@@ -44,6 +45,7 @@ impl ErrorCode {
         ErrorCode::BankError,
         ErrorCode::InvalidInput,
         ErrorCode::NotFound,
+        ErrorCode::Conflict,
         ErrorCode::Internal,
     ];
 
@@ -63,6 +65,7 @@ impl ErrorCode {
             ErrorCode::BankError => "bank_error",
             ErrorCode::InvalidInput => "invalid_input",
             ErrorCode::NotFound => "not_found",
+            ErrorCode::Conflict => "conflict",
             ErrorCode::Internal => "internal",
         }
     }
@@ -101,6 +104,7 @@ impl ErrorCode {
             }
             ErrorCode::InvalidInput => "Los datos enviados no son válidos. Revisa los valores e inténtalo de nuevo.",
             ErrorCode::NotFound => "El movimiento o la categoría ya no existe.",
+            ErrorCode::Conflict => "La operación entra en conflicto con datos existentes.",
             ErrorCode::Internal => "Error interno de la aplicación. Inténtalo de nuevo.",
         }
     }
@@ -196,6 +200,7 @@ impl From<ledger_core::ledger::LedgerError> for CommandError {
         Self::new(match e {
             LedgerError::InvalidInput(_) => ErrorCode::InvalidInput,
             LedgerError::NotFound(_) => ErrorCode::NotFound,
+            LedgerError::Conflict(_) => ErrorCode::Conflict,
             LedgerError::Db(_) => ErrorCode::Internal,
         })
     }
@@ -269,5 +274,13 @@ mod tests {
         assert_eq!(e.code, "bank_error");
         assert!(!e.message.contains("SECRET"));
         assert_eq!(code_of_sync(&SyncError::Poisoned), ErrorCode::Internal);
+    }
+
+    #[test]
+    fn ledger_conflict_maps_to_the_conflict_code() {
+        use ledger_core::ledger::LedgerError;
+        let e: CommandError = LedgerError::Conflict("duplicate").into();
+        assert_eq!(e.code, "conflict");
+        assert!(!e.message.contains("duplicate"));
     }
 }

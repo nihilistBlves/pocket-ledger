@@ -1,4 +1,7 @@
 import {
+  formatBp,
+  formatEurosInput,
+  parseEuros,
   formatDate,
   formatDayMonth,
   formatMonthLong,
@@ -49,5 +52,31 @@ describe('format helpers', () => {
   it('labels comparison periods', () => {
     expect(formatPeriodLabel({ from: '2026-10-01', to: '2026-10-15' })).toBe('1–15 oct');
     expect(formatPeriodLabel({ from: '2026-10-01', to: '2026-10-31' })).toBe('oct 2026');
+  });
+});
+
+describe('amount input helpers', () => {
+  it('parses es-ES amounts into cents', () => {
+    expect(parseEuros('150')).toBe(15000);
+    expect(parseEuros('150,5')).toBe(15050);
+    expect(parseEuros('150,00 €')).toBe(15000);
+    expect(parseEuros('1.234,56')).toBe(123456);
+    expect(parseEuros('1234.56')).toBe(123456);
+    expect(parseEuros('1.234')).toBe(123400);
+    expect(parseEuros(',5')).toBe(50);
+    expect(parseEuros('0')).toBe(0);
+  });
+
+  it('rejects malformed amounts', () => {
+    for (const bad of ['', 'abc', '1,234,5', '12,345', '-5', '1.2.3,4', '12.345,6.7', ',']) {
+      expect(parseEuros(bad), bad).toBeNull();
+    }
+  });
+
+  it('formats cents for an input and basis points as percent', () => {
+    expect(formatEurosInput(15000)).toBe('150,00');
+    expect(formatEurosInput(123456)).toBe('1234,56');
+    expect(formatBp(7810)).toBe('78,1 %');
+    expect(formatBp(11950)).toBe('119,5 %');
   });
 });

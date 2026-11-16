@@ -122,31 +122,32 @@ pub fn create_manual_rule(conn: &Connection, rule: &NewRule) -> Result<i64> {
 }
 
 /// A stored rule, as needed for matching.
-struct StoredRule {
-    id: i64,
-    pattern: String,
-    field: String,
-    match_type: String,
-    account_id: Option<i64>,
-    direction: String,
-    category_id: i64,
-    origin: String,
+pub(crate) struct StoredRule {
+    pub(crate) id: i64,
+    pub(crate) pattern: String,
+    pub(crate) field: String,
+    pub(crate) match_type: String,
+    pub(crate) account_id: Option<i64>,
+    pub(crate) direction: String,
+    pub(crate) category_id: i64,
+    pub(crate) origin: String,
+    pub(crate) priority: i64,
 }
 
 /// A transaction with its texts already normalized.
-struct TxView {
-    account_id: i64,
-    amount_cents: i64,
-    category_source: String,
-    counterparty: String,
-    description: String,
+pub(crate) struct TxView {
+    pub(crate) account_id: i64,
+    pub(crate) amount_cents: i64,
+    pub(crate) category_source: String,
+    pub(crate) counterparty: String,
+    pub(crate) description: String,
 }
 
 /// All rules, best first: manual before learned, then priority, then longer
 /// pattern, then newest.
-fn load_rules(conn: &Connection) -> Result<Vec<StoredRule>> {
+pub(crate) fn load_rules(conn: &Connection) -> Result<Vec<StoredRule>> {
     let mut stmt = conn.prepare(
-        "SELECT id, pattern, field, match_type, account_id, direction, category_id, origin
+        "SELECT id, pattern, field, match_type, account_id, direction, category_id, origin, priority
          FROM rules
          ORDER BY (origin = 'manual') DESC, priority DESC, length(pattern) DESC, id DESC",
     )?;
@@ -161,6 +162,7 @@ fn load_rules(conn: &Connection) -> Result<Vec<StoredRule>> {
                 direction: r.get(5)?,
                 category_id: r.get(6)?,
                 origin: r.get(7)?,
+                priority: r.get(8)?,
             })
         })?
         .collect::<Result<Vec<_>>>()?;
@@ -194,7 +196,7 @@ fn text_matches(rule: &StoredRule, text: &str) -> bool {
     }
 }
 
-fn rule_matches(rule: &StoredRule, tx: &TxView) -> bool {
+pub(crate) fn rule_matches(rule: &StoredRule, tx: &TxView) -> bool {
     if rule.pattern.is_empty() {
         return false;
     }

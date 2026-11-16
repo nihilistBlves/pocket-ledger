@@ -1,0 +1,267 @@
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <app-month-selector [month]="month()" (monthChange)="month.set($event)" />
+    <button type="button" class="btn btn-secondary" (click)="openCreate(null)">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" /></svg>{{ t.newGroup }}
+    </button>
+  </div>
+</header>
+<p class="intro">{{ t.intro }}</p>
+
+<div class="status-line" role="status" aria-live="polite">
+  @if (status(); as s) {
+    <div class="banner" [class.is-error]="s.kind === 'error'"><div class="banner-body">{{ s.text }}</div></div>
+  }
+</div>
+
+@if (error(); as err) {
+  <div class="banner is-error" role="alert">
+    <div class="banner-body">{{ l.loadError }} {{ err.message }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="retry()">{{ l.retry }}</button>
+  </div>
+}
+
+<div class="split" [class.no-panel]="!selected()">
+  <section class="card card-flush" aria-labelledby="h-tree" [attr.aria-busy]="loading()">
+    <div class="card-head">
+      <h2 class="title-sm" id="h-tree">{{ t.treeTitle }}</h2>
+      <span class="caption">{{ caption() }}</span>
+    </div>
+    @if (rows().length === 0 && !loading()) {
+      <p class="empty">{{ t.empty }}</p>
+    } @else {
+      <table class="tbl tree">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colCategory }}</th>
+            <th scope="col" class="col-kind">{{ t.colKind }}</th>
+            <th scope="col" class="r col-n">{{ t.colTx }}</th>
+            <th scope="col" class="r col-amt">{{ t.colAmount(monthShort()) }}</th>
+            <th scope="col" class="r col-n">{{ t.colRules }}</th>
+            <th scope="col" class="col-act"><span class="sr-only">{{ t.colActions }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (n of rows(); track n.id) {
+            <tr
+              tabindex="0"
+              [class.grp]="n.parentId === null"
+              [class.sub]="n.parentId !== null"
+              [class.is-system]="n.isSystem"
+              [class.is-selected]="n.id === selectedId()"
+              [attr.aria-current]="n.id === selectedId() ? 'true' : null"
+              (click)="select(n)"
+              (keydown)="onRowKey($event, n)"
+            >
+              <td>
+                @if (n.parentId === null) {
+                  @if (n.childCount > 0) {
+                    <button type="button" class="twisty" [attr.aria-expanded]="isExpanded(n)" [attr.aria-label]="isExpanded(n) ? t.collapse(n.name) : t.expand(n.name)" (click)="$event.stopPropagation(); toggle(n)">
+                      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">
+                        @if (isExpanded(n)) { <path d="M4 6l4 4 4-4" /> } @else { <path d="M6 3l5 5-5 5" /> }
+                      </svg>
+                    </button>
+                  } @else {
+                    <span class="twisty" aria-hidden="true"></span>
+                  }
+                }
+                <span class="cat"><i [class]="colorOf(n)"></i>{{ n.name }}</span>
+                @if (n.isSystem) {
+                  <svg class="icon lock" role="img" [attr.aria-label]="c.systemCategory" focusable="false" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
+                } @else if (n.parentId === null && !isExpanded(n)) {
+                  <span class="cp">{{ t.subCount(n.childCount) }}</span>
+                } @else if (n.parentId !== null && n.color) {
+                  <span class="cp">{{ t.ownColor }}</span>
+                }
+              </td>
+              <td>{{ kindLabel(n) }}</td>
+              <td class="r num" [class.muted]="n.monthTxCount === 0">{{ n.monthTxCount }}</td>
+              <td class="r num" [class.muted]="n.monthTxCount === 0" [class.amt-pos]="n.kind === 'income' && n.monthTxCount > 0" [class.amt-muted]="n.kind === 'transfer'">{{ amountText(n) }}</td>
+              <td class="r num">{{ n.ruleCount }}</td>
+              <td class="r">
+                @if (n.parentId === null && !n.isSystem) {
+                  <span class="row-act">
+                    <button type="button" class="btn-icon" [attr.aria-label]="t.addSub(n.name)" (click)="$event.stopPropagation(); openCreate(n)">
+                      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" /></svg>
+                    </button>
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="foot-note">{{ t.keyboardHint }}</div>
+    }
+  </section>
+
+  @if (selected(); as sel) {
+    <aside class="card panel" aria-labelledby="p-title">
+      @if (sel.isSystem) {
+        <span class="caption">{{ t.systemCaption }}</span>
+      } @else if (selectedParent(); as parent) {
+        <span class="caption">{{ t.subOf(parent.name) }}</span>
+      } @else {
+        <span class="caption">{{ t.groupCaption }}</span>
+      }
+      <div class="p-head">
+        <h2 class="detail-title" id="p-title">{{ sel.name }}
+          @if (sel.isSystem) {
+            <svg class="icon lock" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
+          }
+        </h2>
+        <button type="button" class="btn-icon" [attr.aria-label]="t.closePanel" (click)="closePanel()">
+          <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+        </button>
+      </div>
+
+      @if (sel.isSystem) {
+        <p class="panel-note p-sys">{{ t.systemNote }}</p>
+        <div class="banner p-sys">
+          <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
+          <div class="banner-body">{{ t.systemLocked }}</div>
+        </div>
+      }
+
+      <div class="stack p-stack">
+        @if (!sel.isSystem) {
+          <div>
+            <label class="field-label" for="c-name">{{ t.name }}</label>
+            <input class="input" id="c-name" type="text" [attr.maxlength]="maxName" [value]="draftName()" (input)="draftName.set($any($event.target).value)" />
+          </div>
+          @if (sel.parentId !== null) {
+            <div>
+              <label class="field-label" for="c-parent">{{ t.group }}</label>
+              <span class="select">
+                <select id="c-parent" (change)="draftParent.set(+$any($event.target).value)">
+                  @for (g of parentOptions(); track g.id) {
+                    <option [value]="g.id" [selected]="g.id === draftParent()">{{ g.name }}</option>
+                  }
+                </select>
+                <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+              </span>
+              <p class="hint">{{ t.groupHint }}</p>
+            </div>
+          }
+        }
+
+        <fieldset class="plain">
+          <legend class="field-label">{{ t.color }}</legend>
+          <div class="swatches">
+            <button type="button" class="swatch swatch-inherit" [attr.aria-pressed]="draftColor() === null" (click)="pickColor(null)">
+              <i [class]="sel.parentId !== null ? groupSwatchClass() : ''"></i>{{ sel.parentId !== null ? t.fromGroup : t.byDefault }}
+            </button>
+            @for (p of palette; track p.token) {
+              <button type="button" class="swatch" [attr.aria-pressed]="draftColor() === p.token" [attr.aria-label]="p.label" (click)="pickColor(p.token)">
+                <i [class]="fmt.colorClass(p.token)"></i>
+              </button>
+            }
+          </div>
+          <p class="hint">{{ t.colorHint }}</p>
+        </fieldset>
+
+        <div class="panel-section">
+          <dl class="dl">
+            <dt>{{ t.txLabel }}</dt><dd class="num">{{ t.usageTx(sel.totalTxCount, sel.monthTxCount) }}</dd>
+            <dt>{{ t.rulesLabel }}</dt>
+            <dd>
+              @if (sel.ruleCount > 0) { <a class="link" routerLink="/reglas">{{ t.rulesLink(sel.ruleCount) }}</a> } @else { {{ t.noRules }} }
+            </dd>
+            <dt>{{ t.budgetLabel }}</dt>
+            <dd>
+              @switch (sel.budget) {
+                @case ('own') { {{ t.budgetOwn }} }
+                @case ('group') { {{ t.budgetGroup(selectedParent()?.name ?? '') }} }
+                @case ('children') { {{ t.budgetChildren }} }
+                @default { {{ t.budgetNone }} }
+              }
+            </dd>
+          </dl>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" [disabled]="!dirty() || saving()" (click)="save()">{{ t.save }}</button>
+          @if (dirty()) {
+            <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="discard()">{{ t.discard }}</button>
+          }
+          @if (!sel.isSystem) {
+            <button type="button" class="btn btn-secondary btn-danger" [class.is-blocked]="deleteBlocked(sel)" [attr.aria-disabled]="deleteBlocked(sel) ? 'true' : null" [attr.aria-describedby]="deleteBlocked(sel) ? 'del-why' : null" (click)="openDelete(sel)">
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>{{ t.delete }}
+            </button>
+          }
+        </div>
+        @if (!sel.isSystem && deleteBlocked(sel)) {
+          <p class="hint del-why" id="del-why">{{ t.deleteBlocked(sel.name, sel.childCount) }}</p>
+        }
+      </div>
+    </aside>
+  }
+</div>
+
+@if (createTarget(); as target) {
+  <app-modal labelledBy="create-t" (dismiss)="closeCreate()">
+    <h2 class="title-sm" id="create-t">{{ target.parent ? t.createSubTitle(target.parent.name) : t.createGroupTitle }}</h2>
+    <form class="stack" (submit)="$event.preventDefault(); confirmCreate()">
+      <div>
+        <label class="field-label" for="n-name">{{ t.createName }}</label>
+        <input class="input" id="n-name" type="text" [attr.maxlength]="maxName" [value]="createName()" (input)="createName.set($any($event.target).value)" />
+      </div>
+      @if (!target.parent) {
+        <fieldset class="plain">
+          <legend class="field-label">{{ t.createKind }}</legend>
+          <div class="seg">
+            <label class="seg-item"><input type="radio" name="nkind" [checked]="createKind() === 'expense'" (change)="createKind.set('expense')" /><span>{{ t.kindExpense }}</span></label>
+            <label class="seg-item"><input type="radio" name="nkind" [checked]="createKind() === 'income'" (change)="createKind.set('income')" /><span>{{ t.kindIncome }}</span></label>
+          </div>
+        </fieldset>
+      }
+      @if (createError(); as err) { <p class="form-error" role="alert">{{ err }}</p> }
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeCreate()">{{ c.cancel }}</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t.create }}</button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (deleting(); as d) {
+  <app-modal labelledBy="del-t" (dismiss)="closeDelete()">
+    <h2 class="title-sm" id="del-t">{{ t.deleteTitle(d.name) }}</h2>
+    <p class="panel-note">{{ t.deleteSummary(d.totalTxCount, d.ruleCount) }}</p>
+    <div class="stack">
+      <div>
+        <label class="field-label" for="dlg-to">{{ t.deleteMoveTo }}</label>
+        <span class="select">
+          <select id="dlg-to" (change)="moveTo.set(+$any($event.target).value)">
+            @for (o of deleteTargets(); track o.id) {
+              <option [value]="o.id" [selected]="o.id === moveTo()">{{ targetLabel(o) }}</option>
+            }
+          </select>
+          <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+        </span>
+        <p class="hint">{{ t.deleteMoveHint }}</p>
+      </div>
+      @if (d.ruleCount > 0) {
+        <fieldset class="plain">
+          <legend class="field-label">{{ t.deleteRulesLegend(d.name) }}</legend>
+          <div class="radio-list">
+            <label><input type="radio" name="dlg-r" [disabled]="targetIsSystem()" [checked]="!deleteRules() && !targetIsSystem()" (change)="deleteRules.set(false)" /><span>{{ t.deleteRulesRepoint }}<small>{{ t.deleteRulesRepointHint }}</small></span></label>
+            <label><input type="radio" name="dlg-r" [checked]="deleteRules() || targetIsSystem()" (change)="deleteRules.set(true)" /><span>{{ t.deleteRulesRemove }}</span></label>
+          </div>
+          @if (targetIsSystem()) { <p class="hint" id="rules-sys">{{ t.deleteRulesSystem }}</p> }
+        </fieldset>
+      }
+      @if (d.budget === 'own') {
+        <div class="banner"><svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2zM8 7v3M8 11.5v.01" /></svg><div class="banner-body">{{ t.deleteBudget }}</div></div>
+      }
+      @if (dialogError(); as err) { <p class="form-error" role="alert">{{ err }}</p> }
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeDelete()">{{ c.cancel }}</button>
+      <button type="button" class="btn btn-secondary btn-danger" [disabled]="saving() || moveTo() === null" (click)="confirmDelete()">
+        <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>{{ t.deleteConfirm(d.totalTxCount) }}
+      </button>
+    </div>
+  </app-modal>
+}

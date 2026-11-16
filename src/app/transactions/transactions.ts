@@ -7,6 +7,7 @@ import { formatCents, formatDate, formatSignedCents, monthOf, monthRange } from 
 import { STRINGS } from '../core/strings';
 import { NOW } from '../ledger/clock';
 import { CategoryOption, TxFilter, TxRow, TxSummary } from '../ledger/ledger.models';
+import { categoryColorClass } from '../ledger/colors';
 import { LedgerService } from '../ledger/ledger.service';
 import { MonthSelector } from '../ledger/month-selector';
 
@@ -285,9 +286,7 @@ export class Transactions {
   }
 
   protected catClass(row: TxRow): string {
-    const top = row.parentCategoryId ?? row.categoryId;
-    const idx = this.groups().findIndex((g) => g.id === top);
-    return idx >= 0 && idx < 6 ? `c${idx + 1}` : '';
+    return categoryColorClass(this.categories(), row.categoryId, row.parentCategoryId);
   }
 
   protected rowCategory(row: TxRow): string {

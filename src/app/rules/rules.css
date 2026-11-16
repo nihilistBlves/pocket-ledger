@@ -1,0 +1,31 @@
+:host { display: contents; }
+.card { gap: 0; }
+.filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
+.filters .f-search { flex: 1 1 180px; min-width: 160px; max-width: 240px; }
+.filters .f-sel { width: 200px; }
+.filters .check { min-height: 36px; padding: 0; align-items: center; }
+.cond { color: var(--text); }
+.cond q { quotes: "«" "»"; font-weight: 492; }
+.badge-learned { background: var(--badge-wisteria); color: var(--on-badge); }
+.badge-manual { background: var(--badge-honey); color: var(--on-badge); }
+.order { color: var(--text-muted); }
+.col-ord { width: 48px; } .col-cat { width: 160px; } .col-org { width: 128px; } .col-hits { width: 96px; } .col-act { width: 88px; }
+.tbl td { white-space: normal; }
+.p-banner { margin-top: 12px; font-size: 13px; }
+.p-stack { margin-top: 16px; }
+.cond-row { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: end; }
+.hint-up { margin-top: -8px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.test-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.test-head .field-label { margin: 0; }
+.test-sum { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 12px; font-size: 13px; color: var(--text-body); }
+.test-sum strong { color: var(--text); font-weight: 584; }
+.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini th { text-align: left; font-weight: 492; color: var(--text-muted); padding: 6px 8px; background: var(--surface-sunken); }
+.mini td { padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+.mini tr.keep td { color: var(--text-muted); }
+.mini .to { display: block; margin-top: 2px; color: var(--text); font-weight: 492; }
+.mini .to.same { font-weight: 400; color: var(--text-muted); }
+.hint-row { display: block; margin: 2px 0 0; }
+.over { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; font-size: 12px; font-weight: 492; color: var(--negative); }
+.apply-check { margin-top: 12px; }

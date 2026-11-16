@@ -1,0 +1,287 @@
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="applyUncategorized()">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z" /></svg>{{ t.applyUncategorized }}
+    </button>
+    <button type="button" class="btn btn-primary" (click)="openNew()">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" /></svg>{{ t.newRule }}
+    </button>
+  </div>
+</header>
+<p class="intro">{{ t.intro }}</p>
+
+<form class="filters" role="search" [attr.aria-label]="t.filtersLabel" (submit)="$event.preventDefault()">
+  <div class="f-search">
+    <label class="field-label" for="r-q">{{ t.search }}</label>
+    <span class="search">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>
+      <input class="input" id="r-q" type="search" [placeholder]="t.searchPlaceholder" [value]="q()" (input)="q.set($any($event.target).value)" />
+    </span>
+  </div>
+  <fieldset class="plain">
+    <legend class="field-label">{{ t.origin }}</legend>
+    <div class="seg">
+      <label class="seg-item"><input type="radio" name="org" [checked]="origin() === 'all'" (change)="origin.set('all')" /><span>{{ t.originAll(counts().all) }}</span></label>
+      <label class="seg-item"><input type="radio" name="org" [checked]="origin() === 'manual'" (change)="origin.set('manual')" /><span>{{ t.originManual(counts().manual) }}</span></label>
+      <label class="seg-item"><input type="radio" name="org" [checked]="origin() === 'learned'" (change)="origin.set('learned')" /><span>{{ t.originLearned(counts().learned) }}</span></label>
+    </div>
+  </fieldset>
+  <div class="f-sel">
+    <label class="field-label" for="r-cat">{{ t.category }}</label>
+    <span class="select">
+      <select id="r-cat" (change)="categoryFilter.set($any($event.target).value)">
+        <option value="" [selected]="categoryFilter() === ''">{{ t.allCategories }}</option>
+        @for (cat of categories(); track cat.id) {
+          <option [value]="cat.id" [selected]="categoryFilter() === '' + cat.id">{{ optionLabel(cat) }}</option>
+        }
+      </select>
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+    </span>
+  </div>
+  <label class="check"><input type="checkbox" id="r-unused" [checked]="unusedOnly()" (change)="unusedOnly.set($any($event.target).checked)" /><span>{{ t.unused }}</span></label>
+</form>
+
+<div class="status-line" role="status" aria-live="polite">
+  @if (status(); as s) {
+    <div class="banner" [class.is-error]="s.kind === 'error'"><div class="banner-body">{{ s.text }}</div></div>
+  }
+</div>
+
+@if (error(); as err) {
+  <div class="banner is-error" role="alert">
+    <div class="banner-body">{{ l.loadError }} {{ err.message }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="retry()">{{ l.retry }}</button>
+  </div>
+}
+
+<div class="split" [class.no-panel]="!isOpen()">
+  <section class="card card-flush" aria-labelledby="h-rules" [attr.aria-busy]="loading()">
+    <h2 class="sr-only" id="h-rules">{{ t.listLabel }}</h2>
+    @if (filtered().length === 0 && !loading()) {
+      <div class="empty">
+        <p>{{ hasFilters() ? t.emptyFiltered : t.empty }}</p>
+        @if (hasFilters()) { <button type="button" class="btn btn-secondary" (click)="clearFilters()">{{ t.clearFilters }}</button> }
+      </div>
+    } @else {
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th scope="col" class="r col-ord">{{ t.colOrder }}</th>
+            <th scope="col">{{ t.colCondition }}</th>
+            <th scope="col" class="col-cat">{{ t.colCategory }}</th>
+            <th scope="col" class="col-org">{{ t.colOrigin }}</th>
+            <th scope="col" class="r col-hits">{{ t.colHits }}</th>
+            <th scope="col" class="col-act"><span class="sr-only">{{ t.colActions }}</span></th>
+          </tr>
+        </thead>
+        <tbody class="two">
+          @for (r of filtered(); track r.id) {
+            <tr tabindex="0" [class.is-selected]="r.id === editingId()" [attr.aria-current]="r.id === editingId() ? 'true' : null" (click)="edit(r)" (keydown)="rowKey($event, r)">
+              <td class="r num order">{{ r.order }}</td>
+              <td>
+                <span class="cond">{{ r.matchType === 'equals' ? t.equals : t.contains }} <q>{{ r.pattern }}</q></span>
+                @if (scope(r); as sc) { <span class="incl">{{ sc }}</span> }
+              </td>
+              <td><span class="cat"><i [class]="colorOf(r)"></i>{{ r.categoryName }}</span></td>
+              <td>
+                @if (r.origin === 'learned') {
+                  <span class="badge badge-learned"><svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2l1.5 4.5L14 8l-4.5 1.5L8 14l-1.5-4.5L2 8l4.5-1.5z" /></svg>{{ t.learned }}</span>
+                } @else {
+                  <span class="badge badge-manual">{{ t.manual }}</span>
+                }
+                <span class="incl">{{ priorityLabel(r.priority) }}</span>
+              </td>
+              <td class="r"><span class="num">{{ r.hits }}</span><span class="incl num">{{ r.lastHitAt ? fmt.date(r.lastHitAt) : t.never }}</span></td>
+              <td class="r">
+                <span class="row-act">
+                  <button type="button" class="btn-icon" [attr.aria-label]="t.edit(r.order)" (click)="$event.stopPropagation(); edit(r)">
+                    <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M10.5 3.5l2 2L6 12l-3 1 1-3z" /></svg>
+                  </button>
+                  <button type="button" class="btn-icon" [attr.aria-label]="t.remove(r.order)" (click)="$event.stopPropagation(); askDelete(r)">
+                    <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>
+                  </button>
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="foot-note">{{ t.showing(filtered().length, rules().length) }} · {{ t.keyboardHint }}</div>
+    }
+  </section>
+
+  @if (isOpen()) {
+    <aside class="card panel" aria-labelledby="p-title">
+      @if (editing(); as ed) {
+        <span class="caption">{{ t.editing(ed.order) }}</span>
+        <h2 class="detail-title" id="p-title">{{ ed.categoryName }}</h2>
+        @if (ed.origin === 'learned') {
+          <div class="banner p-banner">
+            <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2l1.5 4.5L14 8l-4.5 1.5L8 14l-1.5-4.5L2 8l4.5-1.5z" /></svg>
+            <div class="banner-body">{{ t.learnedBanner(fmt.date(ed.createdAt), ed.pattern) }}</div>
+          </div>
+        }
+      } @else {
+        <span class="caption">{{ t.creating }}</span>
+        <h2 class="detail-title" id="p-title">{{ t.newTitle }}</h2>
+      }
+
+      <div class="stack p-stack">
+        <div>
+          <label class="field-label" for="e-field">{{ t.field }}</label>
+          <span class="select">
+            <select id="e-field" (change)="patch({ field: $any($event.target).value })">
+              <option value="any" [selected]="draft().field === 'any'">{{ t.fieldAny }}</option>
+              <option value="description" [selected]="draft().field === 'description'">{{ t.fieldDescription }}</option>
+              <option value="counterparty" [selected]="draft().field === 'counterparty'">{{ t.fieldCounterparty }}</option>
+            </select>
+            <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+          </span>
+        </div>
+        <div class="cond-row">
+          <fieldset class="plain">
+            <legend class="field-label">{{ t.condition }}</legend>
+            <div class="seg">
+              <label class="seg-item"><input type="radio" name="mt" [checked]="draft().matchType === 'contains'" (change)="patch({ matchType: 'contains' })" /><span>{{ t.contains }}</span></label>
+              <label class="seg-item"><input type="radio" name="mt" [checked]="draft().matchType === 'equals'" (change)="patch({ matchType: 'equals' })" /><span>{{ t.equals }}</span></label>
+            </div>
+          </fieldset>
+          <div>
+            <label class="field-label" for="e-pat">{{ t.text }}</label>
+            <input class="input" id="e-pat" type="text" [attr.maxlength]="maxPattern" [value]="draft().pattern" (input)="patch({ pattern: $any($event.target).value })" />
+          </div>
+        </div>
+        <p class="hint hint-up">{{ t.textHint }}</p>
+        <div class="two-col">
+          <div>
+            <label class="field-label" for="e-acct">{{ t.account }}</label>
+            <span class="select">
+              <select id="e-acct" (change)="patch({ accountId: $any($event.target).value ? +$any($event.target).value : null })">
+                <option value="" [selected]="draft().accountId === null">{{ t.allAccounts }}</option>
+                @for (a of accounts(); track a.id) {
+                  <option [value]="a.id" [selected]="draft().accountId === a.id">{{ a.name }}</option>
+                }
+              </select>
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+            </span>
+          </div>
+          <div>
+            <label class="field-label" for="e-dir">{{ t.type }}</label>
+            <span class="select">
+              <select id="e-dir" (change)="patch({ direction: $any($event.target).value })">
+                <option value="any" [selected]="draft().direction === 'any'">{{ t.typeAny }}</option>
+                <option value="out" [selected]="draft().direction === 'out'">{{ t.onlyDirOut }}</option>
+                <option value="in" [selected]="draft().direction === 'in'">{{ t.onlyDirIn }}</option>
+              </select>
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+            </span>
+          </div>
+          <div>
+            <label class="field-label" for="e-cat">{{ t.categoryField }}</label>
+            <span class="select">
+              <select id="e-cat" (change)="patch({ categoryId: $any($event.target).value ? +$any($event.target).value : null })">
+                @if (draft().categoryId === null) { <option value="" selected disabled>{{ t.pickCategory }}</option> }
+                @for (cat of targetOptions(); track cat.id) {
+                  <option [value]="cat.id" [selected]="draft().categoryId === cat.id">{{ optionLabel(cat) }}</option>
+                }
+              </select>
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+            </span>
+          </div>
+          <div>
+            <label class="field-label" for="e-prio">{{ t.priority }}</label>
+            <span class="select">
+              <select id="e-prio" (change)="patch({ level: $any($event.target).value })">
+                <option value="high" [selected]="draft().level === 'high'">{{ t.prioHigh }}</option>
+                <option value="normal" [selected]="draft().level === 'normal'">{{ t.prioNormal }}</option>
+                <option value="low" [selected]="draft().level === 'low'">{{ t.prioLow }}</option>
+              </select>
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="test-head">
+            <h3 class="field-label">{{ t.testTitle }}</h3>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="!canSave() || testing()" (click)="runTest()">
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z" /></svg>{{ testing() ? t.testing : t.test }}
+            </button>
+          </div>
+          @if (test(); as res) {
+            <div class="test-sum" role="status">
+              <span><strong class="num">{{ res.matched }}</strong> {{ t.testMatched }}</span>
+              <span><strong class="num">{{ res.change }}</strong> {{ t.testChange(res.change) }}</span>
+              @if (res.manual > 0) { <span><strong class="num">{{ res.manual }}</strong> {{ res.manual === 1 ? t.testManual : t.testManualPlural }}</span> }
+              @if (res.otherRule > 0) { <span><strong class="num">{{ res.otherRule }}</strong> {{ t.testOther(res.otherRule) }}</span> }
+            </div>
+            @if (res.rows.length > 0) {
+              <table class="mini">
+                <thead><tr><th scope="col">{{ t.testColTx }}</th><th scope="col">{{ t.testColCategory }}</th></tr></thead>
+                <tbody>
+                  @for (row of res.rows; track row.txId) {
+                    <tr [class.keep]="row.outcome !== 'change'">
+                      <td>{{ row.description }}<span class="hint num hint-row">{{ fmt.date(row.date) }} · {{ fmt.cents(row.amountCents) }}</span></td>
+                      <td>
+                        {{ row.categoryName ?? l.uncategorized }}
+                        @switch (row.outcome) {
+                          @case ('change') {
+                            <span class="to">→ {{ targetName() }}
+                              @if (needsReview(row.categoryId)) {
+                                <span class="over"><svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2zM8 7v3M8 11.5v.01" /></svg>{{ t.testReview }}</span>
+                              }
+                            </span>
+                          }
+                          @case ('manual') { <span class="to same">{{ t.testKeepManual }}</span> }
+                          @case ('other_rule') { <span class="to same">{{ t.testWinner(row.winningRuleOrder ?? 0, row.winningRulePattern ?? '') }}</span> }
+                          @default { <span class="to same">{{ t.testSame }}</span> }
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (res.matched > res.rows.length) { <p class="hint">{{ t.testMore(res.matched - res.rows.length) }}</p> }
+              @if (res.otherRule > 0 && res.change === 0) { <p class="hint">{{ t.testRaise }}</p> }
+            } @else {
+              <p class="hint">{{ t.testNone }}</p>
+            }
+            <label class="check apply-check">
+              <input type="checkbox" id="e-apply" [checked]="applyOnSave()" (change)="applyOnSave.set($any($event.target).checked)" />
+              <span>{{ t.applyOnSave(res.change) }}<small>{{ t.applyOnSaveHint }}</small></span>
+            </label>
+          } @else {
+            <label class="check apply-check">
+              <input type="checkbox" id="e-apply" [checked]="applyOnSave()" (change)="applyOnSave.set($any($event.target).checked)" />
+              <span>{{ t.applyOnSaveGeneric }}<small>{{ t.applyOnSaveHint }}</small></span>
+            </label>
+          }
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-primary" [disabled]="!canSave() || busy()" (click)="save()">{{ t.save }}</button>
+          @if (editing(); as ed) {
+            <button type="button" class="btn btn-secondary btn-danger" [disabled]="busy()" (click)="askDelete(ed)">
+              <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>{{ t.delete }}
+            </button>
+          }
+          <button type="button" class="btn btn-secondary" (click)="closeEditor()">{{ c.close }}</button>
+        </div>
+      </div>
+    </aside>
+  }
+</div>
+
+@if (deleting(); as d) {
+  <app-modal labelledBy="rdel-t" (dismiss)="closeDelete()">
+    <h2 class="title-sm" id="rdel-t">{{ t.deleteTitle(d.pattern, d.categoryName) }}</h2>
+    <p class="panel-note">{{ t.deleteBody(d.hits) }}</p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeDelete()">{{ c.cancel }}</button>
+      <button type="button" class="btn btn-secondary btn-danger" [disabled]="busy()" (click)="confirmDelete()">
+        <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>{{ t.deleteConfirm }}
+      </button>
+    </div>
+  </app-modal>
+}
