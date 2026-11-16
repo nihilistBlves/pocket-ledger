@@ -542,6 +542,20 @@ export const STRINGS = {
       keptCopy: (name: string) => `Se conserva la base de datos anterior como ${name}.`,
       dismiss: 'Cerrar aviso',
     },
+    bankKey: {
+      title: 'Conexión bancaria',
+      intro:
+        'Indica dónde está el archivo .pem con la clave privada de tu aplicación de Enable Banking. La aplicación solo guarda la ubicación: no copia ni lee el archivo hasta que firma una petición al banco.',
+      fromEnv: 'Configurada desde la variable de entorno ENABLE_BANKING_KEY_PATH',
+      envPriority:
+        'La variable de entorno tiene prioridad sobre el archivo que elijas aquí mientras esté definida.',
+      configured: (name: string) => `Configurada: ${name}`,
+      none: 'No configurada',
+      missing: 'No se encuentra el archivo. Comprueba que no lo has movido o borrado.',
+      pick: 'Elegir archivo .pem…',
+      remove: 'Quitar',
+      dismiss: 'Cerrar aviso',
+    },
   },
   recovery: {
     title: 'Modo de recuperación',

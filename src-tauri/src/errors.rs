@@ -110,7 +110,7 @@ impl ErrorCode {
                 "La conexión bancaria no está configurada. Falta el archivo enable-banking.json en la carpeta de datos de la aplicación o su contenido no es válido."
             }
             ErrorCode::KeyMissing => {
-                "No se encuentra la clave privada de Enable Banking. Comprueba la variable de entorno ENABLE_BANKING_KEY_PATH y que el archivo existe."
+                "No se encuentra la clave privada de Enable Banking. Elige el archivo .pem en Ajustes > Conexión bancaria y comprueba que el archivo existe."
             }
             ErrorCode::PortInUse => {
                 "El puerto 8080 está ocupado por otra aplicación. Ciérrala e inténtalo de nuevo."
@@ -299,7 +299,7 @@ impl From<rusqlite::Error> for CommandError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ledger_core::bank::enable_banking::{ApiErrorCode, NetworkKind, KEY_PATH_ENV};
+    use ledger_core::bank::enable_banking::{ApiErrorCode, NetworkKind};
 
     #[test]
     fn every_code_has_a_unique_snake_case_code_and_a_spanish_message() {
@@ -309,7 +309,7 @@ mod tests {
             assert!(c.as_str().chars().all(|ch| ch.is_ascii_lowercase() || ch == '_'));
             assert!(c.message().ends_with('.'));
         }
-        assert!(ErrorCode::KeyMissing.message().contains(KEY_PATH_ENV));
+        assert!(ErrorCode::KeyMissing.message().contains("Ajustes > Conexión bancaria"));
         assert!(ErrorCode::NotConfigured.message().contains("enable-banking.json"));
     }
 

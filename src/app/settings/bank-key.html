@@ -1,0 +1,47 @@
+<section class="card sec" aria-labelledby="h-bank-key">
+  <h2 class="title-sm" id="h-bank-key">{{ k.title }}</h2>
+  <p class="body">{{ k.intro }}</p>
+
+  @if (error(); as err) {
+    <div class="banner is-error" role="alert">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+      <div class="banner-body">{{ err.message }}</div>
+      <button type="button" class="btn-icon" [attr.aria-label]="k.dismiss" (click)="dismissError()">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x" /></svg>
+      </button>
+    </div>
+  }
+
+  @if (status(); as s) {
+    <p class="status" data-test="key-status">
+      @switch (s.source) {
+        @case ('env') {
+          <strong>{{ k.fromEnv }}</strong>
+        }
+        @case ('settings') {
+          <strong>{{ k.configured(s.file_name ?? '') }}</strong>
+        }
+        @default {
+          <strong>{{ k.none }}</strong>
+        }
+      }
+    </p>
+    @if (s.source === 'env') {
+      <p class="muted" data-test="env-note">{{ k.envPriority }}</p>
+    }
+    @if (s.configured && !s.exists) {
+      <p class="neg" role="status" data-test="missing">{{ k.missing }}</p>
+    }
+  }
+
+  <div class="actions">
+    <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="pick()">
+      {{ k.pick }}
+    </button>
+    @if (status()?.source === 'settings') {
+      <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="clear()">
+        {{ k.remove }}
+      </button>
+    }
+  </div>
+</section>

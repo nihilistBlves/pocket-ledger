@@ -1,0 +1,7 @@
+:host { display: contents; }
+.sec { padding: 20px; gap: 12px; max-width: 720px; margin-bottom: 24px; }
+.body { line-height: 1.4; color: var(--text-body); }
+.status { font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+.status strong { font-weight: 492; }
+.neg { color: var(--negative); font-size: 13px; line-height: 1.4; }
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

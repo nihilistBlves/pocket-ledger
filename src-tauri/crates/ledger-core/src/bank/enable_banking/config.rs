@@ -43,6 +43,16 @@ impl EbConfig {
         }
     }
 
+    /// Builds a config from an explicit key path (e.g. one stored in the app settings).
+    /// The file is not opened here; it is read only when a request is signed.
+    pub fn new(application_id: impl Into<String>, key_path: impl Into<PathBuf>) -> Self {
+        Self {
+            application_id: application_id.into(),
+            base_url: DEFAULT_BASE_URL.to_owned(),
+            key_path: key_path.into(),
+        }
+    }
+
     /// Overrides the API origin (tests point this to a localhost mock).
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();

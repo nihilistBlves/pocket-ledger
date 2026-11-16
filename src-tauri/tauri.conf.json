@@ -26,7 +26,19 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"]
+    "targets": ["nsis"],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.ico"],
+    "publisher": "Pocket Ledger",
+    "shortDescription": "Local-first personal finance",
+    "copyright": "Pocket Ledger",
+    "category": "Finance",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Spanish", "English"],
+        "displayLanguageSelector": false,
+        "startMenuFolder": "Pocket Ledger"
+      }
+    }
   }
 }
