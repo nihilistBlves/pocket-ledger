@@ -34,6 +34,15 @@ pub enum AppMode {
     Recovery(RecoveryReason),
 }
 
+/// A file chosen for import. Only Rust opens the file; the UI never sees the path.
+pub struct PickedImport {
+    pub bytes: Vec<u8>,
+    /// File name only, no directory.
+    pub file_name: String,
+    /// Lowercase hex SHA-256 of `bytes`, to check they were not swapped before commit.
+    pub sha256: String,
+}
+
 pub struct AppState {
     /// In recovery mode this holds a placeholder in-memory connection.
     pub db: Mutex<Connection>,
@@ -46,6 +55,8 @@ pub struct AppState {
     pub db_key: Mutex<Option<DbKey>>,
     /// Backup file chosen in the native dialog (the UI never sends paths).
     pub picked_backup: Mutex<Option<PathBuf>>,
+    /// File chosen for import in the native dialog. Lock order: this before `db`.
+    pub picked_import: Mutex<Option<PickedImport>>,
 }
 
 impl AppState {
@@ -104,6 +115,7 @@ impl AppState {
             mode: RwLock::new(AppMode::Ready),
             db_key: Mutex::new(key),
             picked_backup: Mutex::new(None),
+            picked_import: Mutex::new(None),
         }
     }
 

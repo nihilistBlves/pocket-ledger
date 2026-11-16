@@ -7,9 +7,13 @@
 
 mod convert;
 mod dates;
+mod history;
 mod pipeline;
+mod preview;
 mod profile;
 mod readers;
+#[cfg(test)]
+mod preview_tests;
 #[cfg(test)]
 mod tests;
 
@@ -20,12 +24,27 @@ use thiserror::Error;
 use crate::identity::AccountIdentity;
 use crate::model::NewTransaction;
 
-pub use pipeline::{import_file, ImportOutcome};
+pub use history::{
+    list_import_batches, undo_import_batch, ImportBatchRow, UndoReport, MAX_HISTORY_LIMIT,
+};
+pub use pipeline::{import_file, IdentityCheck, ImportOutcome};
+pub use preview::{
+    detect_profile, preview_import, raw_rows, sniff_csv_format, ImportCounts,
+    ImportPreview, PreviewRow, RawTable, MAX_PREVIEW_ERRORS, MAX_PREVIEW_ROWS, MAX_RAW_ROWS,
+};
 pub use profile::{
     generic_csv_es, list_profiles, load_profile, openbank_excel, profiles_seed, save_profile,
     seed_builtin_profiles, AmountColumns, ColumnRef, Columns, CsvEncoding, DecimalSpec, FileFormat,
     ImportProfile, StoredProfile,
 };
+
+/// Largest file accepted for import (bank exports are a few hundred KB).
+pub const MAX_FILE_BYTES: usize = 20 * 1024 * 1024;
+
+/// Lowercase hex SHA-256 of `bytes`.
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
+}
 
 /// Why a whole file could not be read (as opposed to a single bad row).
 #[derive(Debug, Error)]
@@ -59,6 +78,19 @@ pub enum ImportError {
     AccountNotFound,
     #[error("built-in profiles cannot be overwritten")]
     BuiltinProfile,
+    #[error("file is too large to import")]
+    TooLarge,
+    /// The file was read but holds no valid row (empty, or every row is invalid).
+    #[error("the file has no rows to import")]
+    NothingToImport,
+    #[error("import batch not found")]
+    BatchNotFound,
+    #[error("import batch was already undone")]
+    BatchAlreadyUndone,
+    /// Bank sync adopted or rewrote rows of this batch, so they are no longer only the
+    /// file's: undoing would delete data the bank now owns.
+    #[error("rows of this batch were adopted by bank sync")]
+    BatchHasSyncedRows,
     #[error("database error: {0}")]
     Db(#[from] rusqlite::Error),
     #[error("profile JSON error: {0}")]
@@ -67,6 +99,7 @@ pub enum ImportError {
 
 /// What was wrong with an amount cell. No cell contents, only the category.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AmountProblem {
     Empty,
     Malformed,
@@ -76,6 +109,7 @@ pub enum AmountProblem {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
 pub enum RowErrorKind {
     MissingValue {
         column: String,
@@ -93,6 +127,7 @@ pub enum RowErrorKind {
 
 /// A row that could not be imported. `row_number` is 1-based, as in the file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RowError {
     pub row_number: usize,
     pub reason: RowErrorKind,
@@ -101,6 +136,8 @@ pub struct RowError {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedImport {
     pub rows: Vec<NewTransaction>,
+    /// 1-based file row number of each entry of `rows` (same length and order).
+    pub row_numbers: Vec<usize>,
     pub errors: Vec<RowError>,
     /// Lowercase hex SHA-256 of the file bytes, to detect re-imports of the same file.
     pub file_sha256: String,
@@ -129,24 +166,41 @@ pub fn parse_file(
     profile: &ImportProfile,
 ) -> Result<ParsedImport, ImportError> {
     profile.validate()?;
-    if !extension_matches(file_name, &profile.format) {
+    let table = read_table(bytes, file_name, &profile.format)?;
+    let mut parsed = convert::convert(&table, profile)?;
+    parsed.file_sha256 = sha256_hex(bytes);
+    Ok(parsed)
+}
+
+/// Decodes the file into raw rows (no columns, no profile semantics).
+fn read_table(
+    bytes: &[u8],
+    file_name: &str,
+    format: &FileFormat,
+) -> Result<Vec<readers::RawRow>, ImportError> {
+    if bytes.len() > MAX_FILE_BYTES {
+        return Err(ImportError::TooLarge);
+    }
+    if !extension_matches(file_name, format) {
         return Err(ImportError::FormatMismatch);
     }
-
-    let table = match &profile.format {
+    match format {
         FileFormat::Csv {
             delimiter,
             encoding,
             quote,
-        } => readers::read_csv(bytes, *delimiter, *quote, *encoding)?,
+        } => {
+            if !delimiter.is_ascii() || !quote.is_ascii() {
+                return Err(ImportError::InvalidProfile(
+                    "delimiter and quote must be ASCII",
+                ));
+            }
+            readers::read_csv(bytes, *delimiter, *quote, *encoding)
+        }
         // Content decides, not the extension: some banks send an HTML table as `.xls`.
         FileFormat::Excel { .. } if readers::looks_like_html(bytes) => {
-            readers::read_html_table(bytes)?
+            readers::read_html_table(bytes)
         }
-        FileFormat::Excel { sheet } => readers::read_excel(bytes, sheet.as_deref())?,
-    };
-
-    let mut parsed = convert::convert(&table, profile)?;
-    parsed.file_sha256 = hex::encode(Sha256::digest(bytes));
-    Ok(parsed)
+        FileFormat::Excel { sheet } => readers::read_excel(bytes, sheet.as_deref()),
+    }
 }

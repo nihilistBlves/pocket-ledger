@@ -21,6 +21,7 @@
 use serde::Serialize;
 use thiserror::Error;
 
+pub mod accounts;
 pub mod budgets;
 pub mod categories_admin;
 pub mod dashboard;
@@ -34,6 +35,7 @@ mod admin_tests;
 #[cfg(test)]
 mod tests;
 
+pub use accounts::{create_manual_account, MAX_ACCOUNT_NAME_CHARS};
 pub use budgets::{budgets, remove_budget, set_budget, BudgetMonth};
 pub use categories_admin::{
     category_tree, create_category, delete_category, update_category, CategoryNode,

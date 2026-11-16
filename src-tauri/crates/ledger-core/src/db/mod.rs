@@ -88,10 +88,11 @@ pub fn migrations() -> Migrations<'static> {
     Migrations::new(MIGRATION_SQL.iter().map(|sql| M::up(sql)).collect())
 }
 
-const MIGRATION_SQL: [&str; 3] = [
+const MIGRATION_SQL: [&str; 4] = [
     include_str!("migrations/0001_initial.sql"),
     include_str!("migrations/0002_seed_categories.sql"),
     include_str!("migrations/0003_bank_sync.sql"),
+    include_str!("migrations/0004_import_undo.sql"),
 ];
 
 /// Schema version (`user_version`) a fully migrated database has in this build.

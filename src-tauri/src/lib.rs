@@ -2,6 +2,7 @@ mod backup_commands;
 mod bank_commands;
 mod bank_config;
 mod errors;
+mod import_commands;
 mod ledger_admin_commands;
 mod ledger_commands;
 mod logging;
@@ -106,6 +107,17 @@ pub fn run() {
             ledger_admin_commands::ledger_budgets,
             ledger_admin_commands::ledger_set_budget,
             ledger_admin_commands::ledger_remove_budget,
+            import_commands::import_pick_file,
+            import_commands::import_raw_rows,
+            import_commands::import_preview,
+            import_commands::import_commit,
+            import_commands::import_cancel,
+            import_commands::import_profiles,
+            import_commands::import_save_profile,
+            import_commands::import_history,
+            import_commands::import_undo,
+            import_commands::import_accounts,
+            import_commands::ledger_create_account,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Pocket Ledger");
