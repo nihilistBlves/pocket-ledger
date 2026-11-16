@@ -35,6 +35,8 @@ pub const SESSION_ENTRY: &str = "enable-banking-session";
 pub const PROVIDER: &str = "enable_banking";
 /// Longest consent we ask for, whatever the bank allows.
 pub const MAX_VALIDITY_DAYS_CAP: u32 = 180;
+/// Seconds kept below the bank's `maximum_consent_validity` to absorb clock skew.
+pub const CONSENT_MARGIN_SECS: u64 = 3_600;
 
 #[derive(Debug, Error)]
 pub enum AuthError {
@@ -117,7 +119,11 @@ pub async fn authorize(
         .find(|a| a.name == params.aspsp_name)
         .ok_or(AuthError::AspspNotFound)?;
     let cap_secs = u64::from(params.max_validity_days_cap) * 86_400;
-    let secs = aspsp.maximum_consent_validity.map_or(cap_secs, |m| m.min(cap_secs));
+    // Margin below the bank's maximum: a local clock only slightly ahead of the API's
+    // would otherwise push `valid_until` past it and get WRONG_REQUEST_PARAMETERS.
+    let secs = aspsp
+        .maximum_consent_validity
+        .map_or(cap_secs, |m| m.saturating_sub(CONSENT_MARGIN_SECS).min(cap_secs));
     let valid_until = Utc::now() + chrono::Duration::seconds(i64::try_from(secs).unwrap_or(i64::MAX / 2));
 
     let state = State::generate().map_err(|_| AuthError::Random)?;
