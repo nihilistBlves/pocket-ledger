@@ -17,6 +17,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+use crate::identity::AccountIdentity;
 use crate::model::NewTransaction;
 
 pub use pipeline::{import_file, ImportOutcome};
@@ -46,6 +47,16 @@ pub enum ImportError {
     /// Carries the column name from the profile (not from the file).
     #[error("column {0:?} not found in the header")]
     MissingColumn(String),
+    /// The file's preamble names an account whose identity is already on another
+    /// local account (e.g. one linked by bank sync). Import into that account instead.
+    #[error("this file belongs to another account (id {existing_account_id})")]
+    AccountBelongsToOther { existing_account_id: i64 },
+    /// The file's preamble names a different account than the import target.
+    #[error("this file belongs to a different account than the selected one")]
+    AccountMismatch,
+    /// The import target account does not exist.
+    #[error("account not found")]
+    AccountNotFound,
     #[error("built-in profiles cannot be overwritten")]
     BuiltinProfile,
     #[error("database error: {0}")]
@@ -93,6 +104,9 @@ pub struct ParsedImport {
     pub errors: Vec<RowError>,
     /// Lowercase hex SHA-256 of the file bytes, to detect re-imports of the same file.
     pub file_sha256: String,
+    /// Identity of the account the file belongs to, when the rows before the header
+    /// (the preamble, e.g. Openbank's "Número de cuenta") hold exactly one IBAN.
+    pub account_identity: Option<AccountIdentity>,
 }
 
 fn extension_matches(file_name: &str, format: &FileFormat) -> bool {

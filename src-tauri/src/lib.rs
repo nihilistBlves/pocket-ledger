@@ -1,6 +1,7 @@
 mod bank_commands;
 mod bank_config;
 mod errors;
+mod logging;
 mod scheduler;
 mod state;
 
@@ -44,7 +45,16 @@ pub fn run() {
         // Used from Rust only, to open the bank authorization URL in the system browser.
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let data_dir = data_dir_override().map_or_else(|| app.path().app_data_dir(), Ok)?;
+            let data_dir_override = data_dir_override();
+            // Registered first so later setup errors are logged too.
+            let log_dir = match &data_dir_override {
+                Some(dir) => dir.join("logs"),
+                None => app.path().app_log_dir()?,
+            };
+            app.handle().plugin(logging::plugin(log_dir))?;
+            log::info!("Pocket Ledger {} starting", env!("CARGO_PKG_VERSION"));
+
+            let data_dir = data_dir_override.map_or_else(|| app.path().app_data_dir(), Ok)?;
             let state = state::AppState::init(&data_dir).map_err(|e| e.to_string())?;
             app.manage(state);
             scheduler::spawn(app.handle().clone());

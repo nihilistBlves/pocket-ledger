@@ -20,3 +20,12 @@ pnpm ng test --watch=false    # frontend unit tests
 cargo test --manifest-path src-tauri/Cargo.toml --workspace   # Rust tests
 pnpm tauri build --no-bundle  # release build of the desktop binary
 ```
+
+### Logs
+
+The app writes a size-rotated log file (1 MB per file, 5 old files kept):
+
+- Normal runs: `%LOCALAPPDATA%\dev.pocketledger.app\logs\pocket-ledger.log`
+- Debug runs with `POCKET_LEDGER_DATA_DIR` set: `<that dir>\logs\pocket-ledger.log`
+
+Level `info`; debug builds also print to stdout and accept `POCKET_LEDGER_LOG=debug` (or `trace`, `warn`, `error`). Log calls only carry endpoint templates, status codes, durations and error codes, and every line passes through a redaction filter that masks IBANs, JWT/bearer tokens, UUIDs (session ids) and long digit runs (see `docs/decisions/phase-5a.md`).

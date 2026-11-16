@@ -43,6 +43,7 @@ tokio = { version = "1.54.1", features = ["sync", "time"] }
 log = { version = "0.4.35", default-features = false }
 tauri-plugin-opener = "2.7.2"
 thiserror = { workspace = true }
+tauri-plugin-log = "2.10.2"
 
 [dev-dependencies]
 tempfile = { workspace = true }
