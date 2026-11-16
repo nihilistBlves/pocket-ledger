@@ -11,7 +11,7 @@
   --positive:#4f6b1a; --negative:#b23b29;
   --badge-honey:#f8da9d; --badge-wisteria:#d5befa; --on-badge:#261b07;
   --badge-linen:#e3dfd5;
-  --cat-1:#f9a600; --cat-2:#b23b29; --cat-3:#7a5cc2; --cat-4:#4f6b1a; --cat-5:#61594a; --cat-6:#9a6a06; --cat-other:#8f897e;
+  --cat-1:#f9a600; --cat-2:#b23b29; --cat-3:#7a5cc2; --cat-4:#4f6b1a; --cat-5:#61594a; --cat-6:#9a6a06; --cat-7:#3d6f73; --cat-8:#8a4f6b; --cat-other:#8f897e;
   --shadow-card:0 4px 8px 0 rgb(38 27 7/.06);
   --shadow-button:inset 0 2px 4px 0 rgb(255 255 255/.56),0 4px 8px 0 rgb(38 27 7/.06),0 1px 2px 0 rgb(38 27 7/.36);
   --shadow-popover:0 8px 24px 0 rgb(38 27 7/.12);
@@ -28,7 +28,7 @@
   --positive:#a8c46a; --negative:#ff8a73;
   --badge-honey:#5a4519; --badge-wisteria:#3f3257; --on-badge:#f3efe6;
   --badge-linen:#3a2f1c;
-  --cat-1:#f9a600; --cat-2:#ff8a73; --cat-3:#c4a8f5; --cat-4:#a8c46a; --cat-5:#cfc7b8; --cat-6:#e8b34a; --cat-other:#857c6c;
+  --cat-1:#f9a600; --cat-2:#ff8a73; --cat-3:#c4a8f5; --cat-4:#a8c46a; --cat-5:#cfc7b8; --cat-6:#e8b34a; --cat-7:#8fc1c4; --cat-8:#d9a0bb; --cat-other:#857c6c;
   --shadow-card:none; --shadow-button:0 1px 2px 0 rgb(0 0 0/.5); --shadow-popover:0 8px 24px 0 rgb(0 0 0/.5);
   color-scheme: dark;
 }
@@ -41,7 +41,7 @@
     --positive:#a8c46a; --negative:#ff8a73;
     --badge-honey:#5a4519; --badge-wisteria:#3f3257; --on-badge:#f3efe6;
     --badge-linen:#3a2f1c;
-    --cat-1:#f9a600; --cat-2:#ff8a73; --cat-3:#c4a8f5; --cat-4:#a8c46a; --cat-5:#cfc7b8; --cat-6:#e8b34a; --cat-other:#857c6c;
+    --cat-1:#f9a600; --cat-2:#ff8a73; --cat-3:#c4a8f5; --cat-4:#a8c46a; --cat-5:#cfc7b8; --cat-6:#e8b34a; --cat-7:#8fc1c4; --cat-8:#d9a0bb; --cat-other:#857c6c;
     --shadow-card:none; --shadow-button:0 1px 2px 0 rgb(0 0 0/.5); --shadow-popover:0 8px 24px 0 rgb(0 0 0/.5);
     color-scheme: dark;
   }

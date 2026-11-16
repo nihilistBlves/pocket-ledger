@@ -85,11 +85,18 @@ impl std::fmt::Debug for DbKey {
 
 /// All migrations, in order. Forward-only: never edit a shipped file, add a new one.
 pub fn migrations() -> Migrations<'static> {
-    Migrations::new(vec![
-        M::up(include_str!("migrations/0001_initial.sql")),
-        M::up(include_str!("migrations/0002_seed_categories.sql")),
-        M::up(include_str!("migrations/0003_bank_sync.sql")),
-    ])
+    Migrations::new(MIGRATION_SQL.iter().map(|sql| M::up(sql)).collect())
+}
+
+const MIGRATION_SQL: [&str; 3] = [
+    include_str!("migrations/0001_initial.sql"),
+    include_str!("migrations/0002_seed_categories.sql"),
+    include_str!("migrations/0003_bank_sync.sql"),
+];
+
+/// Schema version (`user_version`) a fully migrated database has in this build.
+pub fn latest_schema_version() -> i64 {
+    MIGRATION_SQL.len() as i64
 }
 
 /// Opens (creating if needed) the encrypted database at `path` and migrates it.
@@ -100,6 +107,18 @@ pub fn open(path: &Path, key: &DbKey) -> Result<Connection, DbError> {
     // WAL only makes sense for files; `:memory:` databases stay in memory mode.
     conn.pragma_update_and_check(None, "journal_mode", "WAL", |row| row.get::<_, String>(0))?;
     finish_setup(&mut conn)?;
+    Ok(conn)
+}
+
+/// Opens an existing encrypted database with the key and foreign keys on, but
+/// without touching the journal mode and without running migrations. Used to
+/// inspect backups, staging files and databases whose key is being checked.
+pub fn open_unmigrated(path: &Path, key: &DbKey) -> Result<Connection, DbError> {
+    let conn = Connection::open(path)?;
+    apply_key(&conn, key)?;
+    verify_key(&conn)?;
+    conn.pragma_update(None, "foreign_keys", "ON")?;
+    conn.busy_timeout(BUSY_TIMEOUT)?;
     Ok(conn)
 }
 

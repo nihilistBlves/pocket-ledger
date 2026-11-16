@@ -29,6 +29,7 @@ pub fn spawn(app: AppHandle) {
                     ErrorCode::BlockedTooSoon,
                     ErrorCode::Busy,
                     ErrorCode::NotConfigured,
+                    ErrorCode::RecoveryMode,
                 ];
                 if !quiet.iter().any(|c| c.as_str() == e.code) {
                     log::warn!("automatic bank sync failed: {}", e.code);

@@ -1,6 +1,8 @@
 //! Where secrets live. The app talks to the [`SecretStore`] trait; production uses
 //! [`OsKeyring`] (Windows Credential Manager, service "pocket-ledger") and tests use
-//! [`MemoryStore`]. [`load_or_create_db_key`] returns the database key, generating
+//! [`MemoryStore`]. Debug runs with a data dir override use the separate service
+//! [`DEV_SERVICE`] (see [`service_for`]) so they never read or overwrite the
+//! production entries. [`load_or_create_db_key`] returns the database key, generating
 //! and saving it on first run. If a stored key exists but is malformed we fail
 //! instead of generating a new one, because that would orphan the encrypted database.
 //!
@@ -17,6 +19,9 @@ use crate::db::{DbError, DbKey, KEY_LEN};
 
 /// Service name under which entries are stored in the OS secret store.
 pub const SERVICE: &str = "pocket-ledger";
+/// Service name used by debug runs whose data dir is overridden, so a development
+/// database or bank session never shares entries with the production app.
+pub const DEV_SERVICE: &str = "pocket-ledger-dev";
 /// Entry name of the database key.
 pub const DB_KEY_ENTRY: &str = "db-key";
 
@@ -41,19 +46,48 @@ pub trait SecretStore: Send + Sync {
     fn delete(&self, name: &str) -> Result<(), KeystoreError>;
 }
 
-/// Secret store backed by the operating system keyring.
-#[derive(Debug, Default)]
-pub struct OsKeyring;
+/// Keyring service for a run: [`DEV_SERVICE`] when the (debug-only) data dir
+/// override is active, [`SERVICE`] otherwise.
+pub fn service_for(data_dir_overridden: bool) -> &'static str {
+    if data_dir_overridden {
+        DEV_SERVICE
+    } else {
+        SERVICE
+    }
+}
+
+/// Secret store backed by the operating system keyring, under one service name.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OsKeyring {
+    service: String,
+}
 
 impl OsKeyring {
-    fn entry(name: &str) -> Result<keyring::Entry, KeystoreError> {
-        keyring::Entry::new(SERVICE, name).map_err(|e| KeystoreError::Backend(e.to_string()))
+    pub fn new(service: impl Into<String>) -> Self {
+        Self {
+            service: service.into(),
+        }
+    }
+
+    pub fn service(&self) -> &str {
+        &self.service
+    }
+
+    fn entry(&self, name: &str) -> Result<keyring::Entry, KeystoreError> {
+        keyring::Entry::new(&self.service, name).map_err(|e| KeystoreError::Backend(e.to_string()))
+    }
+}
+
+impl Default for OsKeyring {
+    /// The production service, [`SERVICE`].
+    fn default() -> Self {
+        Self::new(SERVICE)
     }
 }
 
 impl SecretStore for OsKeyring {
     fn get(&self, name: &str) -> Result<Option<Zeroizing<Vec<u8>>>, KeystoreError> {
-        match Self::entry(name)?.get_secret() {
+        match self.entry(name)?.get_secret() {
             Ok(bytes) => Ok(Some(Zeroizing::new(bytes))),
             Err(keyring::Error::NoEntry) => Ok(None),
             Err(e) => Err(KeystoreError::Backend(e.to_string())),
@@ -61,13 +95,13 @@ impl SecretStore for OsKeyring {
     }
 
     fn set(&self, name: &str, value: &[u8]) -> Result<(), KeystoreError> {
-        Self::entry(name)?
+        self.entry(name)?
             .set_secret(value)
             .map_err(|e| KeystoreError::Backend(e.to_string()))
     }
 
     fn delete(&self, name: &str) -> Result<(), KeystoreError> {
-        match Self::entry(name)?.delete_credential() {
+        match self.entry(name)?.delete_credential() {
             Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
             Err(e) => Err(KeystoreError::Backend(e.to_string())),
         }
@@ -83,6 +117,14 @@ pub struct MemoryStore {
 impl MemoryStore {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Names of all stored entries (never values), sorted. Handy in tests.
+    pub fn entry_names(&self) -> Vec<String> {
+        let items = self.items.lock().expect("memory store lock");
+        let mut names: Vec<String> = items.keys().cloned().collect();
+        names.sort();
+        names
     }
 }
 
@@ -171,12 +213,25 @@ mod tests {
         assert_eq!(n, 46);
     }
 
+    #[test]
+    fn production_service_is_the_default() {
+        assert_eq!(OsKeyring::default().service(), "pocket-ledger");
+        assert_eq!(service_for(false), SERVICE);
+    }
+
+    #[test]
+    fn data_dir_override_selects_the_dev_service() {
+        assert_eq!(service_for(true), "pocket-ledger-dev");
+        assert_ne!(service_for(true), service_for(false));
+        assert_eq!(OsKeyring::new(service_for(true)).service(), DEV_SERVICE);
+    }
+
     /// Touches the real Windows Credential Manager with a throwaway entry.
     /// Run with `cargo test -- --ignored`.
     #[test]
     #[ignore]
     fn os_keyring_roundtrip() {
-        let store = OsKeyring;
+        let store = OsKeyring::new(DEV_SERVICE);
         let name = "pocket-ledger-test";
         store.delete(name).unwrap();
         assert!(store.get(name).unwrap().is_none());

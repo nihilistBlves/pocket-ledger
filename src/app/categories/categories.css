@@ -1,0 +1,18 @@
+:host { display: contents; }
+.card { gap: 0; }
+.tree td:first-child { padding-left: 12px; }
+.tree .grp td { font-weight: 492; }
+.tree .grp td:first-child { color: var(--text); }
+.tree .sub td:first-child { padding-left: 44px; font-weight: 400; }
+.tree .twisty { padding: 0; border: 0; background: none; display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; margin: 0 4px 0 -6px; border-radius: 4px; color: var(--icon-muted); vertical-align: middle; cursor: pointer; }
+.tree button.twisty:hover { background: var(--surface-selected); }
+.tree .is-system td { color: var(--text-muted); }
+.lock { color: var(--icon-muted); vertical-align: -3px; margin-left: 6px; }
+.col-kind { width: 96px; } .col-n { width: 76px; } .col-amt { width: 124px; } .col-act { width: 56px; }
+.p-head { display: flex; align-items: flex-start; gap: 8px; }
+.p-head .detail-title { flex: 1; min-width: 0; }
+.p-sys { margin-top: 12px; }
+.p-stack { margin-top: 20px; }
+.btn.is-blocked { opacity: 0.55; cursor: not-allowed; }
+.del-why { margin-top: -4px; }
+.dl dd a { color: var(--accent-text); }

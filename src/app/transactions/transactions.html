@@ -1,0 +1,225 @@
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <app-month-selector [month]="month()" (monthChange)="month.set($event)" />
+  </div>
+</header>
+
+<form class="card filters" role="search" [attr.aria-label]="t.filtersLabel" (submit)="$event.preventDefault()">
+  <div class="f-search">
+    <label class="field-label" for="f-q">{{ t.search }}</label>
+    <span class="search">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>
+      <input class="input" id="f-q" type="search" [placeholder]="t.searchPlaceholder" [value]="qInput()" (input)="onSearch($any($event.target).value)" />
+    </span>
+  </div>
+  <div class="f-sel">
+    <label class="field-label" for="f-acct">{{ t.account }}</label>
+    <span class="select">
+      <select id="f-acct" (change)="onAccount($any($event.target).value)">
+        <option value="" [selected]="accountId() === null">{{ t.allAccounts }}</option>
+        @for (a of accounts(); track a.id) {
+          <option [value]="a.id" [selected]="accountId() === a.id">{{ a.name }}</option>
+        }
+      </select>
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+    </span>
+  </div>
+  <div class="f-sel">
+    <label class="field-label" for="f-cat">{{ t.category }}</label>
+    <span class="select">
+      <select id="f-cat" (change)="category.set($any($event.target).value)">
+        <option value="" [selected]="category() === ''">{{ t.allCategories }}</option>
+        <option value="none" [selected]="category() === 'none'">{{ l.uncategorized }}</option>
+        @for (c of categories(); track c.id) {
+          <option [value]="c.id" [selected]="category() === '' + c.id">{{ optionLabel(c) }}</option>
+        }
+      </select>
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+    </span>
+  </div>
+  <fieldset class="plain f-dates">
+    <legend class="field-label">{{ t.dates }}</legend>
+    <div class="date-pair">
+      <label class="sr-only" for="f-from">{{ t.from }}</label>
+      <input class="input num" id="f-from" type="date" [value]="dateFrom()" [max]="dateTo() || null" (change)="dateFrom.set($any($event.target).value)" />
+      <span aria-hidden="true">–</span>
+      <label class="sr-only" for="f-to">{{ t.to }}</label>
+      <input class="input num" id="f-to" type="date" [value]="dateTo()" [min]="dateFrom() || null" (change)="dateTo.set($any($event.target).value)" />
+    </div>
+  </fieldset>
+  <fieldset class="plain">
+    <legend class="field-label">{{ t.type }}</legend>
+    <div class="seg">
+      <label class="seg-item"><input type="radio" name="tipo" value="all" [checked]="direction() === 'all'" (change)="direction.set('all')" /><span>{{ t.typeAll }}</span></label>
+      <label class="seg-item"><input type="radio" name="tipo" value="in" [checked]="direction() === 'in'" (change)="direction.set('in')" /><span>{{ t.typeIn }}</span></label>
+      <label class="seg-item"><input type="radio" name="tipo" value="out" [checked]="direction() === 'out'" (change)="direction.set('out')" /><span>{{ t.typeOut }}</span></label>
+    </div>
+  </fieldset>
+  <label class="check pending-check"><input type="checkbox" [checked]="pendingOnly()" (change)="pendingOnly.set($any($event.target).checked)" /><span>{{ t.onlyPending }}</span></label>
+</form>
+
+<div class="status-line" role="status" aria-live="polite">
+  @if (status(); as s) {
+    <div class="banner" [class.is-error]="s.kind === 'error'"><div class="banner-body">{{ s.text }}</div></div>
+  }
+</div>
+
+@if (error(); as err) {
+  <div class="banner is-error" role="alert">
+    <div class="banner-body">{{ l.loadError }} {{ err.message }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="retry()">{{ l.retry }}</button>
+  </div>
+}
+
+@if (summary(); as s) {
+  <section class="card totals" [attr.aria-label]="t.totalsLabel">
+    <div class="t-item"><span class="t-label">{{ l.income }}</span><span class="t-val num amt-pos">{{ fmt.signed(s.incomeCents) }}</span></div>
+    <div class="t-item"><span class="t-label">{{ l.expense }}</span><span class="t-val num">{{ fmt.signed(-s.expenseCents) }}</span></div>
+    <div class="t-item"><span class="t-label">{{ l.net }}</span><span class="t-val num">{{ fmt.signed(s.netCents) }}</span></div>
+    <span class="t-note">{{ summaryNote() }}</span>
+  </section>
+}
+
+<div class="tx-layout" [class.has-detail]="selected()">
+  <section class="card tx-table" [attr.aria-label]="t.listLabel" [attr.aria-busy]="loading()">
+    @if (rows().length === 0 && !loading()) {
+      <div class="empty">
+        <p>{{ t.empty }}</p>
+        @if (hasFilters()) {
+          <button type="button" class="btn btn-secondary" (click)="clearFilters()">{{ t.clearFilters }}</button>
+        }
+      </div>
+    } @else if (rows().length === 0) {
+      <p class="empty muted">{{ l.loading }}</p>
+    } @else {
+      <table class="tbl sticky">
+        <thead>
+          <tr>
+            <th scope="col" class="col-date" aria-sort="descending">{{ t.colDate }}</th>
+            <th scope="col">{{ t.colDescription }}</th>
+            <th scope="col" class="col-cat">{{ t.colCategory }}</th>
+            <th scope="col" class="col-tags">{{ t.colTags }}</th>
+            <th scope="col" class="col-acct">{{ t.colAccount }}</th>
+            <th scope="col" class="col-amt r">{{ t.colAmount }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track r.id) {
+            <tr
+              tabindex="0"
+              [class.is-pending]="r.status === 'pending'"
+              [class.is-transfer]="r.isTransfer"
+              [class.is-selected]="r.id === selectedId()"
+              [attr.aria-current]="r.id === selectedId() ? 'true' : null"
+              (click)="select(r)"
+              (keydown)="onRowKey($event, r)"
+            >
+              <td class="num muted">{{ fmt.date(r.date) }}</td>
+              <td [attr.title]="rowTitle(r)">
+                <div class="dc">
+                  @if (r.isTransfer) {
+                    <span class="tr-mark" aria-hidden="true">⇄</span><span class="sr-only">{{ l.transfer }}: </span>
+                  }
+                  <span class="desc">{{ r.description }}</span>
+                  @if (r.status === 'pending') { <span class="badge badge-honey">{{ l.pending }}</span> }
+                  @if (subLine(r); as sub) { <span class="cp">{{ sub }}</span> }
+                </div>
+              </td>
+              <td><span class="cat"><i [class]="catClass(r)"></i>{{ rowCategory(r) }}</span></td>
+              <td class="col-tags">
+                @if (r.tags.length) {
+                  <span class="tags" [attr.title]="r.tags.join(', ')">
+                    <span class="tag tag-linen">{{ r.tags[0] }}</span>
+                    @if (r.tags.length > 1) { <span class="muted">+{{ r.tags.length - 1 }}</span> }
+                  </span>
+                } @else {
+                  <span class="muted" [attr.aria-label]="l.noTags">—</span>
+                }
+              </td>
+              <td class="col-acct" [attr.title]="r.accountName">{{ r.accountName }}</td>
+              <td class="r num" [class.amt-pos]="r.amountCents > 0 && !r.isTransfer" [class.amt-muted]="r.isTransfer">{{ fmt.signed(r.amountCents) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="tx-foot">
+        <span>{{ t.showing(rows().length, total()) }} · {{ t.keyboardHint }}</span>
+        @if (rows().length < total()) {
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="loadingMore()" (click)="loadMore()">{{ t.loadMore }}</button>
+        }
+      </div>
+    }
+  </section>
+
+  @if (selected(); as row) {
+    <aside class="card detail" aria-labelledby="d-title">
+      <div class="detail-head">
+        <div class="grow">
+          <span class="caption">{{ t.detail }}</span>
+          <h2 class="detail-title" id="d-title">{{ row.description }}</h2>
+          @if (row.counterparty) { <div class="muted d-cp">{{ row.counterparty }}</div> }
+          <div class="detail-amount num" [class.amt-pos]="row.amountCents > 0 && !row.isTransfer" [class.amt-muted]="row.isTransfer">{{ fmt.signed(row.amountCents) }}</div>
+        </div>
+        <button type="button" class="btn-icon" [attr.aria-label]="t.closeDetail" (click)="closeDetail()">
+          <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+        </button>
+      </div>
+      <dl class="dl detail-dl">
+        <dt>{{ t.bookingDate }}</dt><dd class="num">{{ fmt.date(row.bookingDate ?? row.date) }}</dd>
+        <dt>{{ t.valueDate }}</dt><dd class="num">{{ fmt.date(row.valueDate) }}</dd>
+        <dt>{{ t.colAccount }}</dt><dd>{{ row.accountName }}</dd>
+        <dt>{{ t.state }}</dt><dd>{{ row.status === 'pending' ? l.pending : l.booked }}</dd>
+      </dl>
+      <div class="stack">
+        @if (row.isTransfer) {
+          <p class="muted transfer-note">{{ t.transferNote }}@if (row.transferPeerAccountName) { ({{ row.transferPeerAccountName }}) }</p>
+        }
+        <div>
+          <label class="field-label" for="d-cat">{{ t.category }}</label>
+          <span class="select">
+            <select id="d-cat" [disabled]="row.isTransfer || saving()" (change)="draftCategory.set(+$any($event.target).value)">
+              @if (draftCategory() === null) { <option value="" selected disabled>{{ l.uncategorized }}</option> }
+              @for (c of categories(); track c.id) {
+                <option [value]="c.id" [selected]="c.id === draftCategory()">{{ optionLabel(c) }}</option>
+              }
+            </select>
+            <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+          </span>
+        </div>
+        @if (row.isTransfer) {
+          <button type="button" class="btn btn-secondary" [disabled]="saving()" (click)="unlink()">{{ t.unlink }}</button>
+        }
+        <div>
+          <label class="field-label" for="d-taginput">{{ t.tags }}</label>
+          <div class="chips">
+            @for (tag of draftTags(); track tag) {
+              <span class="tag tag-linen">{{ tag }}
+                <button type="button" [attr.aria-label]="t.removeTag(tag)" (click)="removeTag(tag)">
+                  <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+                </button>
+              </span>
+            }
+            <input id="d-taginput" type="text" list="tag-suggestions" [placeholder]="t.addTag" [value]="tagInput()" maxlength="40" autocomplete="off"
+              (input)="tagInput.set($any($event.target).value)" (keydown)="onTagKey($event, tagInput())" (blur)="addTag(tagInput())" />
+            <datalist id="tag-suggestions">
+              @for (s of tagSuggestions(); track s) { <option [value]="s"></option> }
+            </datalist>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" for="d-note">{{ t.note }}</label>
+          <textarea class="input" id="d-note" maxlength="2000" [placeholder]="t.notePlaceholder" [value]="draftNotes()" (input)="draftNotes.set($any($event.target).value)"></textarea>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="d-rule" [disabled]="row.isTransfer" [checked]="createRule()" (change)="createRule.set($any($event.target).checked)" />
+          <span>{{ t.createRule }}<small id="d-rule-hint">{{ ruleHint() }}</small></span>
+        </label>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" [disabled]="!dirty() || saving()" (click)="save()">{{ t.save }}</button>
+          <button type="button" class="btn btn-secondary" [disabled]="!dirty() || saving()" (click)="discard()">{{ t.discard }}</button>
+        </div>
+      </div>
+    </aside>
+  }
+</div>

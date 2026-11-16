@@ -1,0 +1,54 @@
+:host { display: contents; }
+.sprite { position: absolute; }
+.sec { padding: 20px; gap: 12px; max-width: 720px; margin-bottom: 24px; }
+.body { line-height: 1.4; color: var(--text-body); }
+.status { font-size: 14px; color: var(--text); }
+.status strong { font-weight: 492; }
+.form { display: flex; flex-direction: column; gap: 16px; }
+.field { display: flex; flex-direction: column; max-width: 420px; }
+.input {
+  height: 36px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+.input:focus-visible { border-color: var(--accent-border); }
+.input:disabled { opacity: 0.6; }
+.hint { margin-top: 4px; font-size: 12px; line-height: 1.4; }
+.strength { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; min-height: 18px; font-size: 12px; }
+.meter { display: inline-flex; gap: 4px; }
+.meter .seg { width: 32px; height: 6px; border-radius: 999px; background: var(--surface-sunken); border: 1px solid var(--border-strong); }
+.meter .seg.on { background: var(--negative); border-color: var(--negative); }
+.meter .seg.on.good { background: var(--positive); border-color: var(--positive); }
+.strength-text { color: var(--text); font-weight: 492; }
+.strength-text.is-weak { color: var(--negative); }
+.feedback { color: var(--text-body); flex-basis: 100%; }
+.neg { color: var(--negative); font-size: 13px; line-height: 1.4; margin-top: 4px; }
+.warn {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--negative);
+  font-weight: 492;
+  line-height: 1.4;
+  max-width: 560px;
+}
+.warn .icon { margin-top: 1px; flex: none; }
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.picked { color: var(--text); font-weight: 492; overflow-wrap: anywhere; }
+.banner.ok { border-left-color: var(--positive); }
+.banner.ok .icon { color: var(--positive); }
+.confirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface-sunken); max-width: 560px; }
+.confirm .confirm-q { font-size: 14px; font-weight: 492; color: var(--text); }
+.confirm p { line-height: 1.4; }
+.confirm-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-danger { color: var(--negative); border-color: var(--negative); }
+.btn-danger:hover:not(:disabled) { background: var(--surface); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .input, .meter .seg { transition: border-color 150ms ease-out, background-color 150ms ease-out; }
+}

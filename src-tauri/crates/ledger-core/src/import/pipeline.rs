@@ -4,10 +4,16 @@
 //! profile and hands the valid rows to `ingest::ingest` with source `import`, so
 //! dedup, internal-transfer detection and categorization are identical to sync.
 //! Re-importing the same (or an overlapping) file only adds rows that are new.
+//!
+//! Account identity: when the file's preamble names an IBAN, the target account
+//! must be that account. A target without an identity adopts the file's, unless
+//! another account (e.g. one linked by bank sync) already has it; then the import is
+//! refused instead of creating a second copy of the same bank account.
 
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 
 use super::{parse_file, ImportError, ImportProfile, RowError};
+use crate::identity::AccountIdentity;
 use crate::ingest::{ingest, IngestOrigin, IngestReport};
 use crate::model::TxSource;
 
@@ -21,8 +27,44 @@ pub struct ImportOutcome {
     pub report: IngestReport,
 }
 
+/// Checks the file's identity against the target account and, when the target has
+/// none yet, stores it there. Writes nothing on error.
+fn reconcile_identity(
+    conn: &Connection,
+    account_id: i64,
+    identity: &AccountIdentity,
+) -> Result<(), ImportError> {
+    let current: Option<String> = conn
+        .query_row("SELECT identity_hash FROM accounts WHERE id = ?1", [account_id], |r| r.get(0))
+        .optional()?
+        .ok_or(ImportError::AccountNotFound)?;
+    match current {
+        Some(hash) if hash == identity.hash => Ok(()),
+        Some(_) => Err(ImportError::AccountMismatch),
+        None => {
+            let owner: Option<i64> = conn
+                .query_row(
+                    "SELECT id FROM accounts WHERE identity_hash = ?1",
+                    [&identity.hash],
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if let Some(existing_account_id) = owner {
+                return Err(ImportError::AccountBelongsToOther { existing_account_id });
+            }
+            conn.execute(
+                "UPDATE accounts SET identity_hash = ?1, display_suffix = COALESCE(display_suffix, ?2)
+                 WHERE id = ?3",
+                params![identity.hash, identity.suffix, account_id],
+            )?;
+            Ok(())
+        }
+    }
+}
+
 /// Parses `bytes` with `profile` and ingests the rows into `account_id`.
-/// A file-level parse error aborts before anything is written.
+/// A file-level parse error or an account identity conflict (see the module docs)
+/// aborts before anything is written.
 pub fn import_file(
     conn: &mut Connection,
     account_id: i64,
@@ -32,6 +74,9 @@ pub fn import_file(
     profile: &ImportProfile,
 ) -> Result<ImportOutcome, ImportError> {
     let parsed = parse_file(bytes, file_name, profile)?;
+    if let Some(identity) = &parsed.account_identity {
+        reconcile_identity(conn, account_id, identity)?;
+    }
 
     conn.execute(
         "INSERT INTO import_batches (account_id, profile, file_name, file_sha256, rows_total, errors)
@@ -64,7 +109,7 @@ pub fn import_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::import::generic_csv_es;
+    use crate::import::{generic_csv_es, openbank_excel};
     use crate::model::{NewTransaction, TxStatus};
     use crate::rules::{create_manual_rule, NewRule};
     use crate::test_support::*;
@@ -183,5 +228,124 @@ mod tests {
         assert_eq!(report.adopted, 1);
         assert_eq!(report.inserted, 0);
         assert_eq!(count(&f.conn, "SELECT count(*) FROM transactions"), 3);
+    }
+
+    // ---------- account identity ----------
+
+    /// Fictitious IBANs (invalid check digits on purpose).
+    const FAKE_IBAN: &str = "ES00 0000 0000 0000 0000 0001";
+    const OTHER_IBAN: &str = "ES00 0000 0000 0000 0000 0002";
+
+    fn openbank_doc(iban: &str) -> Vec<u8> {
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><table><tr><td>Cuentas - Movimientos</td></tr><tr><td>N&uacute;mero de cuenta</td><td>{iban}</td></tr><tr><td>Titular</td><td>Persona Ficticia</td></tr><tr><th>Fecha de operaci&oacute;n</th><th>Fecha valor</th><th>Concepto</th><th>Importe</th><th>Saldo</th></tr><tr><td>05/03/2024</td><td>05/03/2024</td><td>CAFETERIA LUNA</td><td>-3,40</td><td>996,60</td></tr></table></body></html>"
+        )
+        .into_bytes()
+    }
+
+    fn import_openbank(f: &mut Fixture, account: i64, iban: &str) -> Result<ImportOutcome, ImportError> {
+        import_file(
+            &mut f.conn,
+            account,
+            &openbank_doc(iban),
+            "movimientos.xls",
+            "Openbank Excel",
+            &openbank_excel(),
+        )
+    }
+
+    fn identity_hash(f: &Fixture, account: i64) -> Option<String> {
+        f.conn
+            .query_row("SELECT identity_hash FROM accounts WHERE id = ?1", [account], |r| r.get(0))
+            .unwrap()
+    }
+
+    fn set_identity(f: &Fixture, account: i64, iban: &str) {
+        let id = AccountIdentity::from_iban(iban).unwrap();
+        f.conn
+            .execute(
+                "UPDATE accounts SET identity_hash = ?1, display_suffix = ?2 WHERE id = ?3",
+                params![id.hash, id.suffix, account],
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn import_adopts_the_preamble_identity_and_reimport_matches_it() {
+        let mut f = fixture();
+        let account = f.own_a;
+        let out = import_openbank(&mut f, account, FAKE_IBAN).expect("import");
+        assert_eq!(out.report.inserted, 1);
+
+        let expected = AccountIdentity::from_iban(FAKE_IBAN).unwrap();
+        assert_eq!(identity_hash(&f, account), Some(expected.hash));
+        let suffix: String = f
+            .conn
+            .query_row("SELECT display_suffix FROM accounts WHERE id = ?1", [account], |r| r.get(0))
+            .unwrap();
+        assert_eq!(suffix, "0001");
+        // The IBAN itself is stored nowhere.
+        let dump: String = f
+            .conn
+            .query_row(
+                "SELECT group_concat(coalesce(name,'') || coalesce(identity_hash,'') || coalesce(display_suffix,'')) FROM accounts",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(!dump.contains("ES0000"));
+
+        let again = import_openbank(&mut f, account, FAKE_IBAN).expect("reimport");
+        assert_eq!(again.report.duplicates, 1);
+    }
+
+    #[test]
+    fn import_into_a_new_account_is_refused_when_a_synced_account_has_the_iban() {
+        let mut f = fixture();
+        let (target, synced) = (f.own_a, f.own_b);
+        set_identity(&f, synced, FAKE_IBAN); // as bank sync would have done
+
+        let err = import_openbank(&mut f, target, FAKE_IBAN).unwrap_err();
+        assert!(
+            matches!(err, ImportError::AccountBelongsToOther { existing_account_id } if existing_account_id == synced),
+            "{err:?}"
+        );
+        assert!(!err.to_string().contains("0001"));
+        assert_eq!(identity_hash(&f, target), None);
+        assert_eq!(count(&f.conn, "SELECT count(*) FROM transactions"), 0);
+        assert_eq!(count(&f.conn, "SELECT count(*) FROM import_batches"), 0);
+
+        // Importing into the synced account itself works.
+        let out = import_openbank(&mut f, synced, FAKE_IBAN).expect("import into synced");
+        assert_eq!(out.report.inserted, 1);
+    }
+
+    #[test]
+    fn import_is_refused_when_the_file_names_a_different_account() {
+        let mut f = fixture();
+        let account = f.own_a;
+        set_identity(&f, account, OTHER_IBAN);
+        assert!(matches!(
+            import_openbank(&mut f, account, FAKE_IBAN),
+            Err(ImportError::AccountMismatch)
+        ));
+        assert_eq!(count(&f.conn, "SELECT count(*) FROM transactions"), 0);
+    }
+
+    #[test]
+    fn import_into_a_missing_account_is_refused() {
+        let mut f = fixture();
+        assert!(matches!(
+            import_openbank(&mut f, 9_999, FAKE_IBAN),
+            Err(ImportError::AccountNotFound)
+        ));
+    }
+
+    #[test]
+    fn file_without_preamble_iban_leaves_identity_alone() {
+        let mut f = fixture();
+        run(&mut f);
+        assert_eq!(identity_hash(&f, f.own_a), None);
     }
 }

@@ -1,0 +1,224 @@
+<header class="page-head">
+  <h1>{{ t.title }}</h1>
+  <div class="page-actions">
+    <app-month-selector [month]="month()" (monthChange)="setMonth($event)" />
+    <button type="button" class="btn btn-primary" (click)="openAdd()">
+      <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" /></svg>{{ t.add }}
+    </button>
+  </div>
+</header>
+
+<div class="status-line" role="status" aria-live="polite">
+  @if (status(); as s) {
+    <div class="banner" [class.is-error]="s.kind === 'error'"><div class="banner-body">{{ s.text }}</div></div>
+  }
+</div>
+
+@if (error(); as err) {
+  <div class="banner is-error" role="alert">
+    <div class="banner-body">{{ l.loadError }} {{ err.message }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="retry()">{{ l.retry }}</button>
+  </div>
+}
+
+@if (data(); as d) {
+  @if (kpis(); as k) {
+    <section class="card kpis" [attr.aria-label]="t.summaryLabel">
+      <div class="kpi">
+        <div class="kpi-label">{{ t.budgeted }}</div>
+        <div class="kpi-value num">{{ fmt.cents(k.tot.budgetCents) }}</div>
+        <div class="kpi-delta">{{ t.budgetedNote(k.tot.count) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">{{ t.spent }}</div>
+        <div class="kpi-value num">{{ fmt.cents(k.tot.spentCents) }}</div>
+        <div class="kpi-delta">{{ t.spentNote(k.pct, k.day, d.daysInMonth) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">{{ t.available }}</div>
+        <div class="kpi-value num" [class.amt-neg]="k.tot.remainingCents < 0">{{ fmt.cents(k.tot.remainingCents) }}</div>
+        <div class="kpi-delta">
+          @if (k.perDay !== null) { {{ t.perDay(fmt.cents(k.perDay)) }} }
+          @else if (k.tot.remainingCents < 0) { {{ t.availableNote }} }
+        </div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">{{ t.exceeded }}</div>
+        <div class="kpi-value num">{{ k.tot.overCount }} <span class="of">{{ t.exceededOf(k.tot.count) }}</span></div>
+        <div class="kpi-delta">
+          @if (k.tot.overCount > 0) {
+            <span class="delta bad"><svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2zM8 7v3M8 11.5v.01" /></svg><span class="num">{{ fmt.cents(k.tot.overCents) }}</span> {{ t.over }}</span>
+          } @else {
+            {{ t.noneOver }}
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="card card-flush" aria-labelledby="h-bud" [attr.aria-busy]="loading()">
+    <div class="card-head">
+      <h2 class="title-sm" id="h-bud">{{ t.tableTitle(monthLabel()) }}</h2>
+      @if (pace() !== null && d.dayOfMonth !== null) {
+        <span class="caption legend-pace"><i aria-hidden="true"></i>{{ t.paceLegend(fmt.bp((d.dayOfMonth / d.daysInMonth) * 10000)) }}</span>
+      } @else {
+        <span class="caption">{{ t.transfersNote }}</span>
+      }
+    </div>
+    @if (d.budgets.length === 0) {
+      <p class="empty">{{ t.empty }}</p>
+    } @else {
+      <table class="tbl bud">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colCategory }}</th>
+            <th scope="col" class="r col-b">{{ t.colBudget }}</th>
+            <th scope="col" class="r col-s">{{ t.colSpent }}</th>
+            <th scope="col" class="r col-a">{{ t.colAvailable }}</th>
+            <th scope="col" class="col-p">{{ t.colProgress }}</th>
+            <th scope="col" class="col-act"><span class="sr-only">{{ t.colActions }}</span></th>
+          </tr>
+        </thead>
+        <tbody class="two">
+          @for (r of d.budgets; track r.categoryId) {
+            <tr>
+              <td>
+                <span class="cat"><i [class]="fmt.colorClass(r.color)"></i>{{ r.name }}</span>
+                @if (r.isGroup) { <span class="incl">{{ t.groupLine(r.childNames.join(', ')) }}</span> }
+                @else if (r.parentName) { <span class="cp">{{ r.parentName }}</span> }
+              </td>
+              <td class="r num">{{ fmt.cents(r.amountCents) }}</td>
+              <td class="r num" [class.muted]="r.spentCents === 0">{{ fmt.cents(r.spentCents) }}</td>
+              <td class="r num" [class.amt-neg]="r.status === 'over'">
+                {{ fmt.cents(r.remainingCents) }}
+                @if (r.status === 'over') {
+                  <span class="over"><svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2zM8 7v3M8 11.5v.01" /></svg>{{ t.exceededLabel }}</span>
+                }
+              </td>
+              <td>
+                <div class="prog" [class.is-warn]="r.status === 'warn'" [class.is-over]="r.status === 'over'" role="progressbar" [attr.aria-label]="rowLabel(r)" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="pctValue(r)">
+                  <span class="track">
+                    <span class="fill" [style.width.%]="fillWidth(r)"></span>
+                    @if (pace() !== null) { <span class="pace" [style.left.%]="pace()"></span> }
+                  </span>
+                  <span class="pct num">{{ fmt.bp(r.percentBp) }}</span>
+                </div>
+              </td>
+              <td class="r">
+                <button type="button" class="btn-icon" [attr.aria-label]="t.edit(r.name)" (click)="openEdit(r)">
+                  <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M10.5 3.5l2 2L6 12l-3 1 1-3z" /></svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+        @if (kpis(); as k) {
+          <tfoot>
+            <tr>
+              <td>{{ t.total }}</td>
+              <td class="r num">{{ fmt.cents(k.tot.budgetCents) }}</td>
+              <td class="r num">{{ fmt.cents(k.tot.spentCents) }}</td>
+              <td class="r num">{{ fmt.cents(k.tot.remainingCents) }}</td>
+              <td><span class="num">{{ k.pct }}</span></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    }
+  </section>
+
+  <section class="card card-flush nob" aria-labelledby="h-nob">
+    <div class="card-head">
+      <h2 class="title-sm" id="h-nob">{{ t.unbudgetedTitle }}</h2>
+      <span class="caption">{{ t.unbudgetedCaption(d.unbudgeted.length) }}</span>
+    </div>
+    @if (d.unbudgeted.length === 0) {
+      <p class="empty">{{ t.unbudgetedNone }}</p>
+    } @else {
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th scope="col">{{ t.colCategory }}</th>
+            <th scope="col" class="r col-s">{{ t.colSpent }}</th>
+            <th scope="col" class="r col-avg">{{ t.colAvg }}</th>
+            <th scope="col" class="col-add"><span class="sr-only">{{ t.colActions }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of d.unbudgeted; track u.categoryId) {
+            <tr>
+              <td><span class="cat"><i [class]="fmt.colorClass(u.color)"></i>{{ u.name }}</span>@if (u.parentName) { <span class="cp">{{ u.parentName }}</span> }</td>
+              <td class="r num">{{ fmt.cents(u.spentCents) }}</td>
+              <td class="r num">{{ fmt.cents(u.avg3Cents) }}</td>
+              <td class="r">
+                <button type="button" class="btn btn-secondary btn-sm" [attr.aria-label]="t.addRowFor(u.name)" (click)="openAdd(u.categoryId, u.avg3Cents)">
+                  <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" /></svg>{{ t.addRow }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+    @if (d.uncategorizedCents > 0) {
+      <p class="hint note">{{ t.uncategorizedNote(fmt.cents(d.uncategorizedCents)) }}</p>
+    }
+  </section>
+}
+
+@if (dialog(); as dlg) {
+  <app-modal labelledBy="b-t" (dismiss)="closeDialog()">
+    <h2 class="title-sm" id="b-t">{{ dlg.row || dlg.categoryId !== null ? t.dialogTitle(dialogName()) : t.addTitle }}</h2>
+    @if (dialogNote()) { <p class="panel-note">{{ dialogNote() }}</p> }
+    <form class="stack" (submit)="$event.preventDefault(); saveBudget()">
+      @if (!dlg.row && dlg.categoryId === null) {
+        <div>
+          <label class="field-label" for="b-cat">{{ t.category }}</label>
+          <span class="select">
+            <select id="b-cat" (change)="pickCategory($any($event.target).value)">
+              @if (pickedCategory() === null) { <option value="" selected disabled>{{ t.pickCategory }}</option> }
+              @for (o of expenseOptions(); track o.id) {
+                <option [value]="o.id" [selected]="o.id === pickedCategory()">{{ o.parentId === null ? o.name : '  ' + o.name }}</option>
+              }
+            </select>
+            <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+          </span>
+        </div>
+      }
+      <div>
+        <label class="field-label" for="b-amt">{{ t.amount }}</label>
+        <span class="search amt">
+          <input class="input num" id="b-amt" type="text" inputmode="decimal" autocomplete="off" [value]="amountText()" (input)="amountText.set($any($event.target).value)" />
+          <span class="eur" aria-hidden="true">€</span>
+        </span>
+        @if (dlg.avg3Cents !== null) { <p class="hint">{{ t.avgHint(fmt.cents(dlg.avg3Cents)) }}</p> }
+      </div>
+      <div>
+        <label class="field-label" for="b-from">{{ t.from }}</label>
+        <span class="select">
+          <select id="b-from" (change)="fromNext.set($any($event.target).value === 'next')">
+            <option value="this" [selected]="!fromNext()">{{ isCurrent() ? t.thisMonth(monthLabel()) : t.fromMonth(monthLabel()) }}</option>
+            <option value="next" [selected]="fromNext()">{{ nextMonthLabel() }}</option>
+          </select>
+          <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>
+        </span>
+        @if (dlg.row) { <p class="hint">{{ previousHint() }}</p> }
+      </div>
+      @if (dialogError(); as err) { <p class="form-error" role="alert">{{ err }}</p> }
+      <div class="dialog-actions between">
+        @if (dlg.row) {
+          <button type="button" class="btn btn-secondary btn-danger" [disabled]="saving()" (click)="removeBudget()">
+            <svg class="icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.5 8h5l.5-8" /></svg>{{ t.remove }}
+          </button>
+        } @else {
+          <span></span>
+        }
+        <span class="btn-group">
+          <button type="button" class="btn btn-secondary" (click)="closeDialog()">{{ t.cancel }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t.save }}</button>
+        </span>
+      </div>
+    </form>
+  </app-modal>
+}

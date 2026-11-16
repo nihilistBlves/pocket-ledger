@@ -20,3 +20,14 @@ pnpm ng test --watch=false    # frontend unit tests
 cargo test --manifest-path src-tauri/Cargo.toml --workspace   # Rust tests
 pnpm tauri build --no-bundle  # release build of the desktop binary
 ```
+
+Debug builds only: set `POCKET_LEDGER_DATA_DIR` to keep a development run's database and config in another folder (e.g. the project's ignored `tmp/`). While it is set, secrets go to the OS keyring service `pocket-ledger-dev` instead of `pocket-ledger`, so the run never reads the production database key or touches the production bank session. Release builds ignore the variable. See [docs/decisions/dev-keyring-isolation.md](docs/decisions/dev-keyring-isolation.md).
+
+### Logs
+
+The app writes a size-rotated log file (1 MB per file, 5 old files kept):
+
+- Normal runs: `%LOCALAPPDATA%\dev.pocketledger.app\logs\pocket-ledger.log`
+- Debug runs with `POCKET_LEDGER_DATA_DIR` set: `<that dir>\logs\pocket-ledger.log`
+
+Level `info`; debug builds also print to stdout and accept `POCKET_LEDGER_LOG=debug` (or `trace`, `warn`, `error`). Log calls only carry endpoint templates, status codes, durations and error codes, and every line passes through a redaction filter that masks IBANs, JWT/bearer tokens, UUIDs (session ids) and long digit runs (see `docs/decisions/phase-5a.md`).
