@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es-ES">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Importar · pocket-ledger</title>
+<!-- Mock only: the app bundles Inter locally (no remote fonts in production, CSP). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..600&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="extras.css">
+<link rel="stylesheet" href="import.css">
+<script>(function(){try{var t=localStorage.getItem('pl-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-overview" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></symbol><symbol id="i-moves" viewBox="0 0 16 16"><path d="M5 14V2M5 14l-2.5-2.5M5 14l2.5-2.5M11 2v12M11 2L8.5 4.5M11 2l2.5 2.5"/></symbol><symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.5 3.5a1 1 0 0 1 1-1h4.1a1 1 0 0 1 .7.3l5.2 5.2a1 1 0 0 1 0 1.4l-4.1 4.1a1 1 0 0 1-1.4 0L2.8 8.3a1 1 0 0 1-.3-.7z"/><circle cx="5.5" cy="5.5" r=".75"/></symbol><symbol id="i-filter" viewBox="0 0 16 16"><path d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5z"/></symbol><symbol id="i-pie" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 2v6h6"/></symbol><symbol id="i-bank" viewBox="0 0 16 16"><path d="M2 6.5L8 3l6 3.5zM4 8v3.5M8 8v3.5M12 8v3.5M2.5 13.5h11"/></symbol><symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 10V2.5M5 5l3-3 3 3M2.5 10v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/></symbol><symbol id="i-sliders" viewBox="0 0 16 16"><path d="M2 4h5M11 4h3M2 12h2M8 12h6"/><circle cx="9" cy="4" r="2"/><circle cx="6" cy="12" r="2"/></symbol><symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></symbol><symbol id="i-left" viewBox="0 0 16 16"><path d="M10 3.5L5.5 8l4.5 4.5"/></symbol><symbol id="i-right" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"/></symbol><symbol id="i-down" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol><symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 0 1-9.6 3.7M2.5 8a5.5 5.5 0 0 1 9.6-3.7M12.5 1.8v2.8H9.7M3.5 14.2v-2.8h2.8"/></symbol><symbol id="i-swap" viewBox="0 0 16 16"><path d="M2 5.5h11M10.5 3L13 5.5 10.5 8M14 10.5H3M5.5 8L3 10.5 5.5 13"/></symbol><symbol id="i-calendar" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></symbol><symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.2 1.3"/></symbol><symbol id="i-alert" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 11.1v.01"/></symbol><symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 4.5"/></symbol><symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol><symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol><symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2.5v8M5 7.5l3 3 3-3M2.5 13.5h11"/></symbol><symbol id="i-file" viewBox="0 0 16 16"><path d="M4 1.5h5l3.5 3.5v9a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5v-12A.5.5 0 0 1 4 1.5zM9 1.5V5h3.5"/></symbol><symbol id="i-book" viewBox="0 0 16 16"><path d="M3.5 2h8.5a1 1 0 0 1 1 1v10.5H4.5a1 1 0 0 1-1-1zM3.5 12.5a1 1 0 0 1 1-1H13M6 5h4"/></symbol><symbol id="i-sortdown" viewBox="0 0 16 16"><path d="M8 3v10M4.5 9.5L8 13l3.5-3.5"/></symbol><symbol id="i-arrowdown" viewBox="0 0 16 16"><path d="M8 3v9M4.5 8.5L8 12l3.5-3.5"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v5M9.2 6.5v5"/></symbol><symbol id="i-undo" viewBox="0 0 16 16"><path d="M5.5 3.5L2.5 6.5l3 3M2.5 6.5h7a4 4 0 0 1 0 8H7"/></symbol><symbol id="i-lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></symbol><symbol id="i-arrow" viewBox="0 0 16 16"><path d="M2.5 8h10M9 4.5L12.5 8 9 11.5"/></symbol></svg>
+<div class="app">
+    <aside class="sidebar">
+      <div class="brand"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-book"/></svg><span>pocket-ledger</span></div>
+      <nav class="nav" aria-label="Principal"><ul>
+        <li><a href="dashboard.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-overview"/></svg><span>Resumen</span></a></li>
+        <li><a href="transactions.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-moves"/></svg><span>Movimientos</span></a></li>
+        <li><a href="categories.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-tag"/></svg><span>Categorías</span></a></li>
+        <li><a href="rules.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-filter"/></svg><span>Reglas</span></a></li>
+        <li><a href="budgets.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-pie"/></svg><span>Presupuestos</span></a></li>
+        <li><a href="accounts.html"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-bank"/></svg><span>Cuentas</span></a></li>
+        <li><a href="import.html" aria-current="page"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-upload"/></svg><span>Importar</span></a></li>
+      </ul></nav>
+      <div class="sidebar-foot">
+        <div class="status"><span class="dot" aria-hidden="true"></span><span>Sincronizado hace 2 h</span></div>
+        <div class="status"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-clock"/></svg><span>Consentimiento: 142 días</span></div>
+        <nav aria-label="Secundaria" class="nav"><ul><li><a href="#"><svg class="icon " aria-hidden="true" focusable="false"><use href="#i-sliders"/></svg><span>Ajustes</span></a></li></ul></nav>
+        <div class="theme-block">
+        <span class="caption theme-label" id="theme-label">Tema</span>
+        <div class="theme-toggle" role="group" aria-labelledby="theme-label">
+          <button type="button" data-theme="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme="dark" aria-pressed="false">Oscuro</button>
+          <button type="button" data-theme="system" aria-pressed="true">Sistema</button>
+        </div>
+      </div>
+      </div>
+    </aside>
+        <main class="main" id="main">
+
+      <header class="page-head">
+        <h1>Importar movimientos</h1>
+      </header>
+      <p class="intro">Importa un extracto CSV o Excel descargado desde la web de tu banco. El archivo se lee y se procesa en este equipo; no se envía a ningún servidor ni se guarda una copia.</p>
+
+      <!-- ===== State 1: choose file + history ===== -->
+      <p class="preview-note">Estado 1 · Inicio: elegir archivo e historial de importaciones</p>
+      <div class="state grid">
+        <section class="card span-4" aria-labelledby="h-pick">
+          <div class="card-head"><h2 class="title-sm" id="h-pick">Nuevo archivo</h2></div>
+          <p style="line-height:1.4;color:var(--text-body)">Formatos admitidos: CSV (.csv, .txt) y Excel (.xlsx, .xls). Los extractos de Openbank se reconocen automáticamente.</p>
+          <div style="margin-top:16px"><button type="button" class="btn btn-primary"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg>Elegir archivo…</button></div>
+          <div class="local-note"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg><span>Se abre el selector de archivos de Windows. La aplicación solo lee el archivo que elijas.</span></div>
+        </section>
+
+        <section class="card card-flush span-8" aria-labelledby="h-hist">
+          <div class="card-head"><h2 class="title-sm" id="h-hist">Historial de importaciones</h2><span class="caption">Últimas 5</span></div>
+          <table class="tbl top" style="margin-top:12px">
+            <thead><tr><th scope="col" style="width:136px">Fecha</th><th scope="col">Archivo</th><th scope="col" style="width:150px">Cuenta</th><th scope="col" style="width:168px">Movimientos</th><th scope="col" class="r" style="width:120px"><span class="sr-only">Acciones</span></th></tr></thead>
+            <tbody>
+              <tr><td class="num">16/11/2026 10:12</td><td>extracto-octubre.xls<span class="incl">Openbank (Excel)</span></td><td>Cuenta Nómina</td><td class="num">38 nuevos · 3 duplicados<span class="incl">1 fila no válida</span></td><td class="r"><button type="button" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>Deshacer</button></td></tr>
+              <tr><td class="num">02/11/2026 18:40</td><td>tarjeta-2026-10.csv<span class="incl">Tarjeta Demo (perfil guardado)</span></td><td>Tarjeta de crédito</td><td class="num">21 nuevos</td><td class="r"><button type="button" class="btn btn-secondary btn-sm"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>Deshacer</button></td></tr>
+              <tr><td class="num">15/10/2026 09:05</td><td>extracto-septiembre.xls<span class="incl">Openbank (Excel)</span></td><td>Cuenta Nómina</td><td class="num">Sin cambios · 44 duplicados</td><td class="r muted">—</td></tr>
+              <tr><td class="num">01/10/2026 21:17</td><td>ahorro-2026.csv<span class="incl">CSV genérico (es-ES)</span></td><td>Cuenta Ahorro</td><td class="num muted">Deshecha el 01/10/2026</td><td class="r muted">—</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- ===== State 2a: Openbank detected ===== -->
+      <p class="preview-note">Estado 2a · Formato reconocido (extracto de Openbank)</p>
+      <ol class="steps" aria-label="Pasos"><li class="is-done">Archivo</li><li aria-current="step">Formato</li><li>Cuenta</li><li>Revisión</li><li>Resultado</li></ol>
+      <div class="state grid">
+        <section class="card span-8" aria-labelledby="h-fmt-a">
+          <div class="file-row"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-file"/></svg><div class="meta"><strong>extracto-octubre.xls</strong><span>Tabla HTML con extensión .xls · 46 filas</span></div><button type="button" class="btn btn-secondary btn-sm">Cambiar archivo</button></div>
+          <div class="match" style="margin-top:16px"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg><div class="banner-body"><strong id="h-fmt-a">Formato reconocido: Openbank (Excel).</strong> Fechas dd/mm/aaaa, importe con signo, cabecera en la fila 6.</div></div>
+          <div class="footer-actions"><button type="button" class="btn btn-secondary">Configurar a mano</button><div class="right"><button type="button" class="btn btn-secondary">Cancelar</button><button type="button" class="btn btn-primary">Continuar<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></div></div>
+        </section>
+      </div>
+
+      <!-- ===== State 2b: generic mapping ===== -->
+      <p class="preview-note">Estado 2b · Formato no reconocido: configuración del CSV</p>
+      <ol class="steps" aria-label="Pasos"><li class="is-done">Archivo</li><li aria-current="step">Formato</li><li>Cuenta</li><li>Revisión</li><li>Resultado</li></ol>
+      <div class="state grid">
+        <section class="card span-12" aria-labelledby="h-fmt-b">
+          <div class="file-row"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-file"/></svg><div class="meta"><strong>movimientos-tarjeta.csv</strong><span>CSV · 26 filas</span></div><button type="button" class="btn btn-secondary btn-sm">Cambiar archivo</button></div>
+
+          <h2 class="title-sm" id="h-fmt-b" style="margin:20px 0 4px">Cómo leer este archivo</h2>
+          <p class="hint" style="margin:0 0 16px">No reconocemos este formato. Indica qué contiene cada columna; la vista previa se actualiza al cambiar cualquier opción.</p>
+
+          <div class="map-grid">
+            <div><label class="field-label" for="m-prof">Perfil</label><span class="select"><select id="m-prof"><option>CSV genérico (es-ES)</option><option>Tarjeta Demo (guardado)</option><option>Openbank (Excel)</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <div><label class="field-label" for="m-enc">Codificación</label><span class="select"><select id="m-enc"><option selected>Windows-1252 (Excel en español)</option><option>UTF-8</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <fieldset class="fieldset"><legend class="field-label">Separador de columnas</legend>
+              <div class="seg"><label class="seg-item"><input type="radio" name="del" checked><span>;</span></label><label class="seg-item"><input type="radio" name="del"><span>,</span></label><label class="seg-item"><input type="radio" name="del"><span>Tabulador</span></label><label class="seg-item"><input type="radio" name="del"><span>|</span></label></div></fieldset>
+
+            <div><label class="field-label" for="m-skip">Filas antes de la cabecera</label><input class="input num" id="m-skip" type="number" min="0" value="2"><label class="check" style="margin-top:8px"><input type="checkbox" checked><span>La primera fila leída es la cabecera</span></label></div>
+            <div><label class="field-label" for="m-date">Formato de fecha</label><span class="select"><select id="m-date"><option selected>dd/mm/aaaa</option><option>dd-mm-aaaa</option><option>aaaa-mm-dd</option><option>dd/mm/aa</option><option>mm/dd/aaaa</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <fieldset class="fieldset"><legend class="field-label">Formato de importes</legend>
+              <div class="seg"><label class="seg-item"><input type="radio" name="dec" checked><span class="num">1.234,56</span></label><label class="seg-item"><input type="radio" name="dec"><span class="num">1,234.56</span></label><label class="seg-item"><input type="radio" name="dec"><span class="num">1234.56</span></label></div></fieldset>
+
+            <div class="section-title full">Columnas</div>
+            <div><label class="field-label" for="m-c-date">Fecha de operación *</label><span class="select"><select id="m-c-date"><option selected>A · Fecha</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <div><label class="field-label" for="m-c-val">Fecha valor</label><span class="select"><select id="m-c-val"><option selected>— Ninguna —</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <div><label class="field-label" for="m-c-desc">Concepto *</label><span class="select"><select id="m-c-desc"><option selected>B · Descripción</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <fieldset class="fieldset full"><legend class="field-label">Importe</legend>
+              <div class="seg"><label class="seg-item"><input type="radio" name="amt"><span>Una columna con signo</span></label><label class="seg-item"><input type="radio" name="amt" checked><span>Columnas de cargo y abono</span></label></div></fieldset>
+            <div><label class="field-label" for="m-c-deb">Cargo *</label><span class="select"><select id="m-c-deb"><option selected>C · Cargo</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span><p class="hint">Siempre se resta, tenga o no signo.</p></div>
+            <div><label class="field-label" for="m-c-cre">Abono *</label><span class="select"><select id="m-c-cre"><option selected>D · Abono</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+            <div><label class="field-label" for="m-c-cp">Contraparte</label><span class="select"><select id="m-c-cp"><option selected>— Ninguna —</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+          </div>
+
+          <div class="section-title">Primeras filas del archivo</div>
+          <div class="raw">
+            <table class="tbl">
+              <thead><tr><th scope="col" class="rn">Fila</th><th scope="col">A<small>Fecha de operación</small></th><th scope="col">B<small>Concepto</small></th><th scope="col">C<small>Cargo</small></th><th scope="col">D<small>Abono</small></th><th scope="col">E</th></tr></thead>
+              <tbody>
+                <tr class="is-skipped"><td class="rn num">1</td><td>Tarjeta Demo</td><td></td><td></td><td></td><td></td></tr>
+                <tr class="is-skipped"><td class="rn num">2</td><td>Periodo: octubre 2026</td><td></td><td></td><td></td><td></td></tr>
+                <tr class="is-header"><td class="rn num">3</td><td>Fecha</td><td>Descripción</td><td>Cargo</td><td>Abono</td><td>Saldo</td></tr>
+                <tr><td class="rn num">4</td><td class="num">03/10/2026</td><td>MERCADO PLAZA MAYOR</td><td class="num">42,18</td><td></td><td class="num">−42,18</td></tr>
+                <tr><td class="rn num">5</td><td class="num">05/10/2026</td><td>CAFETERIA EL PORTAL</td><td class="num">3,40</td><td></td><td class="num">−45,58</td></tr>
+                <tr><td class="rn num">6</td><td class="num">09/10/2026</td><td>DEVOLUCION TIENDA DEMO</td><td></td><td class="num">19,99</td><td class="num">−25,59</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer-actions">
+            <label class="check"><input type="checkbox" checked><span>Guardar como perfil</span></label>
+            <div style="flex:1;max-width:280px"><label class="sr-only" for="m-name">Nombre del perfil</label><input class="input" id="m-name" type="text" value="Tarjeta Demo"></div>
+            <div class="right"><button type="button" class="btn btn-secondary">Cancelar</button><button type="button" class="btn btn-primary">Continuar<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== State 3: account ===== -->
+      <p class="preview-note">Estado 3 · Cuenta de destino (coincidencia por IBAN, y error de conflicto)</p>
+      <ol class="steps" aria-label="Pasos"><li class="is-done">Archivo</li><li class="is-done">Formato</li><li aria-current="step">Cuenta</li><li>Revisión</li><li>Resultado</li></ol>
+      <div class="state grid">
+        <section class="card span-6" aria-labelledby="h-acc-a">
+          <h2 class="title-sm" id="h-acc-a" style="margin-bottom:16px">Cuenta de destino</h2>
+          <div class="match"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg><div class="banner-body"><strong>Cuenta Nómina (•••• 4821)</strong><br>El IBAN del archivo coincide con esta cuenta.</div></div>
+          <div style="margin-top:16px"><label class="field-label" for="a-acc">Importar en</label><span class="select"><select id="a-acc"><option selected>Cuenta Nómina · •••• 4821</option><option>Cuenta Ahorro · •••• 7390</option><option>Tarjeta de crédito · •••• 0156</option><option>Nueva cuenta…</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+          <div class="footer-actions"><button type="button" class="btn btn-secondary">Atrás</button><div class="right"><button type="button" class="btn btn-primary">Ver vista previa<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></div></div>
+        </section>
+        <section class="card span-6" aria-labelledby="h-acc-b">
+          <h2 class="title-sm" id="h-acc-b" style="margin-bottom:16px">Cuenta de destino</h2>
+          <div class="banner is-error" role="alert"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><div class="banner-body"><strong>Este archivo es de otra cuenta.</strong> El IBAN del extracto no coincide con «Cuenta Ahorro». No se ha importado nada.</div></div>
+          <div class="banner is-error" role="alert" style="margin-top:12px"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><div class="banner-body"><strong>Este extracto pertenece a «Cuenta Nómina».</strong> Esa cuenta ya está vinculada a este IBAN (por ejemplo, por la conexión con el banco). Impórtalo allí para no duplicar la cuenta.</div><button type="button" class="btn btn-secondary btn-sm">Usar Cuenta Nómina</button></div>
+          <div style="margin-top:16px"><label class="field-label" for="a-acc2">Importar en</label><span class="select"><select id="a-acc2"><option>Cuenta Nómina · •••• 4821</option><option selected>Cuenta Ahorro · •••• 7390</option></select><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-down"/></svg></span></div>
+        </section>
+      </div>
+
+      <!-- ===== State 4: preview ===== -->
+      <p class="preview-note">Estado 4 · Revisión antes de importar (nada se ha guardado todavía)</p>
+      <ol class="steps" aria-label="Pasos"><li class="is-done">Archivo</li><li class="is-done">Formato</li><li class="is-done">Cuenta</li><li aria-current="step">Revisión</li><li>Resultado</li></ol>
+      <div class="state">
+        <section class="card counts kpis" aria-label="Resumen de la revisión">
+          <div class="kpi"><div class="kpi-label">Filas con datos</div><div class="kpi-value num">42</div><div class="kpi-delta">del 01/10/2026 al 31/10/2026</div></div>
+          <div class="kpi"><div class="kpi-label">Nuevos</div><div class="kpi-value num status-new">38</div><div class="kpi-delta">se añadirán a Cuenta Nómina</div></div>
+          <div class="kpi"><div class="kpi-label">Ya importados</div><div class="kpi-value num">3</div><div class="kpi-delta">se omiten, no se duplican</div></div>
+          <div class="kpi"><div class="kpi-label">No válidos</div><div class="kpi-value num">1</div><div class="kpi-delta">se omiten</div></div>
+        </section>
+        <div class="grid">
+          <section class="card card-flush span-8" aria-labelledby="h-prev">
+            <div class="card-head"><h2 class="title-sm" id="h-prev">Primeros movimientos</h2><span class="caption">10 de 42</span></div>
+            <table class="tbl" style="margin-top:12px">
+              <thead><tr><th scope="col" class="rn" style="width:56px">Fila</th><th scope="col" style="width:104px">Fecha</th><th scope="col">Concepto</th><th scope="col" class="r" style="width:112px">Importe</th><th scope="col" style="width:120px">Estado</th></tr></thead>
+              <tbody>
+                <tr><td class="num muted">7</td><td class="num">31/10/2026</td><td>NOMINA ACME DEMO SL</td><td class="r num amt-pos">+2.150,00 €</td><td><span class="status-new">Nuevo</span></td></tr>
+                <tr><td class="num muted">8</td><td class="num">30/10/2026</td><td>MERCADO PLAZA MAYOR</td><td class="r num">−64,32 €</td><td><span class="status-new">Nuevo</span></td></tr>
+                <tr><td class="num muted">9</td><td class="num">29/10/2026</td><td>CAFETERIA EL PORTAL</td><td class="r num">−3,40 €</td><td><span class="status-new">Nuevo</span></td></tr>
+                <tr><td class="num muted">10</td><td class="num">28/10/2026</td><td>TRANSFERENCIA A CUENTA AHORRO</td><td class="r num">−300,00 €</td><td><span class="status-new">Nuevo</span><span class="incl">posible traspaso</span></td></tr>
+                <tr><td class="num muted">11</td><td class="num">27/10/2026</td><td>LUZ ELECTRICA DEMO</td><td class="r num">−48,90 €</td><td><span class="status-dup">Ya importado</span></td></tr>
+                <tr><td class="num muted">12</td><td class="num">26/10/2026</td><td>SUSCRIPCION STREAMING DEMO</td><td class="r num">−12,99 €</td><td><span class="status-dup">Ya importado</span></td></tr>
+                <tr><td class="num muted">13</td><td class="num">25/10/2026</td><td>FARMACIA CENTRAL</td><td class="r num">−8,75 €</td><td><span class="status-new">Nuevo</span></td></tr>
+                <tr><td class="num muted">14</td><td class="num">24/10/2026</td><td>GASOLINERA RUTA 9</td><td class="r num">−55,00 €</td><td><span class="status-new">Nuevo</span></td></tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="card span-4" aria-labelledby="h-bad">
+            <div class="card-head"><h2 class="title-sm" id="h-bad">Filas que no se importarán</h2></div>
+            <ul class="err-list">
+              <li><span class="num">Fila 29</span><span>Importe no válido en la columna «Importe»: formato no reconocido.</span></li>
+            </ul>
+            <p class="hint">Se indica la fila del archivo y la columna; el contenido de la celda no se muestra.</p>
+          </section>
+        </div>
+        <div class="footer-actions"><button type="button" class="btn btn-secondary">Atrás</button><div class="right"><button type="button" class="btn btn-secondary">Cancelar</button><button type="button" class="btn btn-primary"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-upload"/></svg>Importar 38 movimientos</button></div></div>
+      </div>
+
+      <!-- ===== State 5: result + undo dialog ===== -->
+      <p class="preview-note">Estado 5 · Resultado, y confirmación al deshacer una importación</p>
+      <ol class="steps" aria-label="Pasos"><li class="is-done">Archivo</li><li class="is-done">Formato</li><li class="is-done">Cuenta</li><li class="is-done">Revisión</li><li aria-current="step">Resultado</li></ol>
+      <div class="state grid">
+        <section class="card span-6" aria-labelledby="h-res">
+          <div style="display:flex;align-items:center;gap:8px"><span class="res ok"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg></span><h2 class="title-sm" id="h-res">Importación completada</h2></div>
+          <dl class="dl" style="margin-top:16px">
+            <dt>Cuenta</dt><dd>Cuenta Nómina</dd>
+            <dt>Movimientos nuevos</dt><dd class="num">38</dd>
+            <dt>Ya importados</dt><dd class="num">3</dd>
+            <dt>Filas no válidas</dt><dd class="num">1</dd>
+            <dt>Traspasos detectados</dt><dd class="num">1</dd>
+            <dt>Categorizados por reglas</dt><dd class="num">29</dd>
+          </dl>
+          <div class="footer-actions"><button type="button" class="btn btn-secondary"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>Deshacer esta importación</button><div class="right"><button type="button" class="btn btn-secondary">Importar otro archivo</button><button type="button" class="btn btn-primary">Ver movimientos</button></div></div>
+        </section>
+        <div class="span-6">
+          <div class="dialog" role="dialog" aria-labelledby="dlg-t" aria-modal="false">
+            <h2 class="title-sm" id="dlg-t">¿Deshacer la importación de extracto-octubre.xls?</h2>
+            <p style="line-height:1.4;color:var(--text-body)">Se eliminarán los 38 movimientos que añadió en Cuenta Nómina, incluidas sus categorías y notas. Los traspasos emparejados con ellos se desvinculan. Los movimientos que ya existían antes no se tocan.</p>
+            <p class="hint">Puedes volver a importar el mismo archivo después.</p>
+            <div class="dialog-actions"><button type="button" class="btn btn-secondary">Cancelar</button><button type="button" class="btn btn-secondary btn-danger"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-trash"/></svg>Deshacer importación</button></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+</div>
+<script>(function(){var root=document.documentElement,btns=document.querySelectorAll('.theme-toggle button');
+function cur(){var t=root.getAttribute('data-theme');return t==='light'||t==='dark'?t:'system';}
+function paint(){var c=cur();btns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.theme===c));});}
+btns.forEach(function(b){b.addEventListener('click',function(){var t=b.dataset.theme;if(t==='system')root.removeAttribute('data-theme');else root.setAttribute('data-theme',t);try{localStorage.setItem('pl-theme',t);}catch(e){}paint();});});paint();})();</script>
+</body>
+</html>
