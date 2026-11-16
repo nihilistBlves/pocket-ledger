@@ -6,6 +6,8 @@ use tokio::io::AsyncWriteExt;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, Request, Respond, ResponseTemplate};
 
+use sha2::{Digest, Sha256};
+
 use super::*;
 use crate::bank::enable_banking::Session;
 use crate::bank::test_support::*;
@@ -322,15 +324,6 @@ fn account_without_iban_falls_back_to_the_identification_hash() {
     let out = register(&mut conn, &store, &from_body(body));
     assert_eq!((out.accounts_linked, out.accounts_skipped), (1, 1));
     assert_eq!(text(&conn, "SELECT identity_hash FROM accounts").len(), 64);
-}
-
-#[test]
-fn identity_normalizes_the_iban() {
-    let a = AccountIdentity::from_iban(" es00 0000 0000 0000 0000 0001 ").unwrap();
-    let b = AccountIdentity::from_iban(FAKE_IBAN_A).unwrap();
-    assert_eq!(a, b);
-    assert_eq!(a.suffix.as_deref(), Some("0001"));
-    assert!(AccountIdentity::from_iban("  ").is_none());
 }
 
 #[test]

@@ -17,7 +17,6 @@ use std::time::Duration;
 use chrono::{DateTime, NaiveDate, Utc};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use thiserror::Error;
 use zeroize::{Zeroize, Zeroizing};
 
@@ -27,6 +26,7 @@ use super::enable_banking::{
     REDIRECT_URL,
 };
 use super::db_timestamp;
+pub use crate::identity::AccountIdentity;
 use crate::keystore::{KeystoreError, SecretStore};
 
 /// Keyring entry holding the [`StoredSession`] JSON.
@@ -225,7 +225,7 @@ pub fn register_session(
     tx.execute("DELETE FROM account_links WHERE provider = ?1", [PROVIDER])?;
     let (mut linked, mut skipped) = (0, 0);
     for account in &session.accounts {
-        let Some(identity) = AccountIdentity::from_account(account) else {
+        let Some(identity) = identity_of(account) else {
             skipped += 1;
             continue;
         };
@@ -296,52 +296,20 @@ pub fn register_session(
     })
 }
 
-/// Stable identity of a bank account: the SHA-256 (hex) of the normalized IBAN, so a
-/// bank-synced account and an imported one with the same IBAN are the same row. The
-/// IBAN itself is never stored; only its last 4 characters are kept for display.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AccountIdentity {
-    pub hash: String,
-    pub suffix: Option<String>,
-}
-
-impl AccountIdentity {
-    /// `iban` may contain spaces and lower case.
-    pub fn from_iban(iban: &str) -> Option<Self> {
-        let normalized: String = iban
-            .chars()
-            .filter(|c| !c.is_whitespace())
-            .map(|c| c.to_ascii_uppercase())
-            .collect();
-        if normalized.is_empty() {
-            return None;
-        }
-        let suffix: String =
-            normalized.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
-        Some(Self { hash: hex::encode(Sha256::digest(normalized.as_bytes())), suffix: Some(suffix) })
-    }
-
-    fn from_identification_hash(value: &str) -> Option<Self> {
-        let value = value.trim();
-        (!value.is_empty()).then(|| Self {
-            hash: hex::encode(Sha256::digest(format!("eb-identification:{value}").as_bytes())),
-            suffix: None,
+/// Identity of a session account: its IBAN when the bank gives one, else the
+/// identification hash.
+fn identity_of(account: &Account) -> Option<AccountIdentity> {
+    account
+        .account_id
+        .as_ref()
+        .and_then(|a| a.iban.as_ref())
+        .and_then(|iban| AccountIdentity::from_iban(iban.expose()))
+        .or_else(|| {
+            account
+                .identification_hash
+                .as_ref()
+                .and_then(|h| AccountIdentity::from_identification_hash(h.expose()))
         })
-    }
-
-    fn from_account(account: &Account) -> Option<Self> {
-        account
-            .account_id
-            .as_ref()
-            .and_then(|a| a.iban.as_ref())
-            .and_then(|iban| Self::from_iban(iban.expose()))
-            .or_else(|| {
-                account
-                    .identification_hash
-                    .as_ref()
-                    .and_then(|h| Self::from_identification_hash(h.expose()))
-            })
-    }
 }
 
 fn kind_of(cash_account_type: Option<&str>) -> &'static str {
