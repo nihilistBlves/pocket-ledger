@@ -15,7 +15,7 @@ The app handles: the Enable Banking private key (`.pem`), the Enable Banking app
 
 | Item | Where | Notes |
 |---|---|---|
-| Private key `.pem` | Stays where the owner put it, outside the repo; path in env var `ENABLE_BANKING_KEY_PATH` | Read by the Rust core only at JWT-signing time, kept in memory only as long as needed. Never logged, copied, or sent to the UI. |
+| Private key `.pem` | Stays where the owner put it, outside the repo; path in env var `ENABLE_BANKING_KEY_PATH` (priority, dev script) or in the optional `key_path` field of `enable-banking.json`, chosen from Ajustes > Conexión bancaria (only the file name is shown in the UI) | Read by the Rust core only at JWT-signing time, kept in memory only as long as needed. Never logged, copied, or sent to the UI. |
 | Application ID | Local config file in app data dir | Not a secret per se, but kept out of the repo. |
 | Enable Banking `session_id` + consent `valid_until` | OS keyring | Session ID grants data access when combined with a valid JWT. |
 | Database key | OS keyring | See ADR 0002. |

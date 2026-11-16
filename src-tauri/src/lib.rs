@@ -1,6 +1,7 @@
 mod backup_commands;
 mod bank_commands;
 mod bank_config;
+mod bank_key_commands;
 mod errors;
 mod ledger_admin_commands;
 mod ledger_commands;
@@ -86,6 +87,9 @@ pub fn run() {
             bank_commands::bank_connect,
             bank_commands::bank_sync_now,
             bank_commands::bank_disconnect,
+            bank_key_commands::bank_key_status,
+            bank_key_commands::bank_key_pick,
+            bank_key_commands::bank_key_clear,
             ledger_commands::ledger_dashboard,
             ledger_commands::ledger_transactions,
             ledger_commands::ledger_categories,

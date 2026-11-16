@@ -275,9 +275,14 @@ impl EbClient {
                     return Ok(raw);
                 }
                 Ok(raw) => {
+                    // Only the sanitized error code is logged, never `message` or `detail`.
+                    let code = match api_error(raw.status, &raw.body) {
+                        EbError::Api { code, .. } => code.to_string(),
+                        _ => String::new(),
+                    };
                     log::warn!(
-                        "{} -> {} (attempt {}, {} ms)",
-                        ep.template, raw.status, attempt, elapsed_ms
+                        "{} -> {} {} (attempt {}, {} ms)",
+                        ep.template, raw.status, code, attempt, elapsed_ms
                     );
                     if attempt <= self.retry.max_retries && status_retryable(raw.status, ep.idem) {
                         tokio::time::sleep(self.retry.delay(attempt, raw.retry_after)).await;

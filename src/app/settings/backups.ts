@@ -5,6 +5,7 @@ import { toCommandError } from '../bank/bank.service';
 import { CommandError } from '../bank/bank.models';
 import { formatDate } from '../core/format';
 import { STRINGS } from '../core/strings';
+import { BankKey } from './bank-key';
 
 /** Pause after the last keystroke before the strength is checked. */
 export const CHECK_DEBOUNCE_MS = 300;
@@ -12,6 +13,7 @@ export const CHECK_DEBOUNCE_MS = 300;
 /** "Ajustes" page, section "Copias de seguridad". Passphrases live only in the form signals. */
 @Component({
   selector: 'app-backups',
+  imports: [BankKey],
   templateUrl: './backups.html',
   styleUrl: './backups.css',
 })
