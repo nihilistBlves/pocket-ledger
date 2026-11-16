@@ -32,3 +32,13 @@ A stored profile matches when its format fits the extension and content, its hea
 ## Refresh
 
 After commit, undo and account creation the backend emits `bank://synced`, which the ledger screens and the bank overview already listen to.
+
+## Screen (`/importar`)
+
+- Approved mock: `design/mocks/import.html`. One page with a five-step flow (Archivo → Formato → Cuenta → Revisión → Resultado); the start view has "Nuevo archivo" and the import history.
+- No drag and drop: a dropped file would hand the WebView its contents and path, against the rule that only Rust reads files.
+- The sidebar link "Importar" is text-only, like the other items (the real sidebar has no icons). The real Cuentas screen has no import card, so nothing was added there.
+- Unrecognised files: the UI guesses the header row (first row with at least two filled cells) and sends it as `skip_rows`, so the mapping works with the file's own column names; `ColumnRef::Name` with a header, `Index` without.
+- Error banners show the backend's Spanish message for each `ErrorCode`; row errors are built in the UI from kind, column and problem (row number, never cell content).
+- Excel files always use the first sheet (no sheet selector yet).
+- `import.css` is over the 4 kB component style budget (warning only).
