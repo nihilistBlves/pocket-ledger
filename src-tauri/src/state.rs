@@ -34,10 +34,10 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Production startup: key from the OS keyring, database in `data_dir`.
-    pub fn init(data_dir: &Path) -> Result<Self, StateError> {
+    /// Startup: key from the OS keyring under `keyring_service`, database in `data_dir`.
+    pub fn init(data_dir: &Path, keyring_service: &str) -> Result<Self, StateError> {
         std::fs::create_dir_all(data_dir).map_err(|_| StateError::DataDir)?;
-        let store = OsKeyring;
+        let store = OsKeyring::new(keyring_service);
         let key = load_or_create_db_key(&store).map_err(|_| StateError::Key)?;
         let conn = db::open(&data_dir.join(DB_FILE), &key).map_err(|_| StateError::Database)?;
         Ok(Self::new(conn, Box::new(store), data_dir.to_path_buf()))
